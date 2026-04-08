@@ -1,12 +1,36 @@
 ---
-title: "Working doc fin 450"
+title: "Exploring Wildfire Causes and Provincial Responses"
 format: html
 editor: visual
+toc: true
+toc_depth: 1
+html:
+  embed-resources: true
 ---
 
-## 
+# Initial Summary
 
-```{r}
+think of something ...
+
+
+# Methodology
+
+The data that is used for this analysis has been scraped from official Government of Alberta sources, location data has been scraped from Nominatim Opens street map. Government of Alberta sources include; 2006-2025 historical wildfire data, and Alberta Regional data. The Alberta Regional data includes the top and bottom ten values for both median family income and percentage of first nations in the municipality. Median family income that was reported at \$0 was excluded as it is erroneous.
+
+*** 
+
+# Limitations
+
+This analysis has some limitations; firstly some data may be wrongly reported. For example, the minimum wildfire size that can be reported is .1 hectares, however any fire that is responded to by wildfire assets- is considered a wildfire. This creates reporting issues as car fires may be inaccurately listed as wildfires. As such, for a majority of this report only fires with areas larger than .11 hectares will be considered. Furthermore as per definition only fires that are started by; Lightning, restart or undetermined- will be considered as natural fires with the rest being considered human caused.
+
+***
+
+
+
+
+
+
+```{r, include = FALSE, echo = FALSE, message= FALSE, warning= FALSE}
 
 library(tidyverse)
 library(tidyquant)
@@ -15,81 +39,136 @@ library(ggplot2)
 library(stringr)
 library(lubridate)
 library(geosphere)
+library(rsample)
+library(recipes)
+library(parsnip)
+library(yardstick)
+library(broom)
+library(rpart.plot)
+library(gt)
+library(rvest)
+library(jsonlite)
+library(leaflet)
+library(xgboost)
+library(Ckmeans.1d.dp)
+library(stringr)
+library(leaflegend)
 
-wf_data <- readr::read_csv("C:/Users/Geck/Desktop/wildfire/fp-historical-wildfire-data-2006-2025.csv") %>% 
+url <- "https://open.alberta.ca/dataset/a221e7a0-4f46-4be7-9c5a-e29de9a3447e/resource/80480824-0c50-456c-9723-f9d4fc136141/download/fp-historical-wildfire-data-2006-2025.csv"
+dest_file <- "fp-historical-wildfire-data-2006-2025.csv"
+curl::curl_download(url,dest_file)
+
+
+wf_data <- readr::read_csv(dest_file) %>% 
   group_by(FUEL_TYPE) %>% 
-  drop_na(FUEL_TYPE) 
+  drop_na(FUEL_TYPE) %>% 
+  ungroup()
 
 clean_wf_data <- wf_data %>% 
   dplyr::select(FIRE_START_DATE,YEAR,FIRE_NUMBER,CURRENT_SIZE,SIZE_CLASS,LATITUDE,LONGITUDE,FIRE_ORIGIN,GENERAL_CAUSE,FIRE_TYPE,FIRE_POSITION_ON_SLOPE,WEATHER_CONDITIONS_OVER_FIRE,TEMPERATURE,RELATIVE_HUMIDITY,WIND_DIRECTION,WIND_SPEED,FUEL_TYPE,FIRST_BH_DATE,FIRST_BH_SIZE,FIRST_UC_DATE,FIRST_UC_SIZE,FIRST_EX_DATE,FIRST_EX_SIZE_PERIMETER) %>% 
   dplyr::mutate(MONTH = substring(FIRE_START_DATE, 6,7)) %>%
   dplyr::mutate(FIRE_START_DATE = lubridate::ymd(substring(FIRE_START_DATE,1,10))) %>%
   dplyr::mutate(FIRST_BH_DATE = lubridate::ymd(substring(FIRST_BH_DATE,1,10))) %>% 
-  dplyr::mutate(FIRST_UC_DATE = lubridate::ymd(substring(FIRST_UC_DATE,1,10))) %>% 
-  group_by(FIRE_START_DATE)
-clean_wf_data
-
+  dplyr::mutate(FIRST_UC_DATE = lubridate::ymd(substring(FIRST_UC_DATE,1,10))) %>%
+  dplyr::mutate(GENERAL_CAUSE = ifelse(GENERAL_CAUSE %in% c("Lightning","Restart","Undetermined"),"Natural","Human Caused")) %>% 
+  dplyr::rename_with(.,  tolower, .cols = everything()) %>% 
+  dplyr::rename_with(.,  ~gsub("_", " ",.x), .cols = everything()) %>% 
+  dplyr::rename_with(.,  ~str_to_title(.x), cols = everything()) %>% 
+  group_by(`Fire Start Date`)
+clean_wf_data  
+  
+  
+  
 ml_wf_data <- clean_wf_data %>% 
-  dplyr::select(CURRENT_SIZE,LATITUDE,LONGITUDE,GENERAL_CAUSE,TEMPERATURE,RELATIVE_HUMIDITY,WIND_DIRECTION,WIND_SPEED,FUEL_TYPE,MONTH) %>% 
-dplyr::filter(CURRENT_SIZE > .11)
+  dplyr::select(`Current Size`,`Latitude`,`Longitude`,`General Cause`,`Temperature`,`Relative Humidity`,`Wind Direction`,`Wind Speed`,`Fuel Type`,`Month`) %>% 
+dplyr::filter(`Current Size` > .11) %>% 
+  dplyr::ungroup()
 ml_wf_data
 
 ```
 
-The `echo: false` option disables the printing of code (only output is displayed).
-
-```{r}
+```{r include = FALSE, echo = FALSE, message= FALSE, warning= FALSE}
 #distance from major cities
 
 distance_appended <- ml_wf_data %>% 
-  dplyr::mutate(dist_edm_km = distHaversine(cbind(-113.323975, 53.631611), cbind(LONGITUDE, LATITUDE))/1000) %>% 
-  dplyr::mutate(dist_cal_km = distHaversine(cbind(-114.066666, 51.049999), cbind(LONGITUDE, LATITUDE))/1000) %>% 
-  dplyr::mutate(dist_ftm_km = distHaversine(cbind(-111.38103, 56.72676), cbind(LONGITUDE, LATITUDE))/1000) %>% 
-  dplyr::mutate(dist_pr_km = distHaversine(cbind(-117.289993, 56.237293), cbind(LONGITUDE, LATITUDE))/1000) %>% 
-  dplyr::mutate(dist_gp_km = distHaversine(cbind(-118.80271, 55.16667), cbind(LONGITUDE, LATITUDE))/1000) %>% 
-  dplyr::mutate(dist_whct_km = distHaversine(cbind(-115.683, 54.133), cbind(LONGITUDE, LATITUDE))/1000) %>% 
-  dplyr::mutate(dist_eds_km = distHaversine(cbind(-116.416667, 53.583333), cbind(LONGITUDE, LATITUDE))/1000) %>% 
-  dplyr::mutate(dist_slave_km = distHaversine(cbind(-114.76896, 55.28344), cbind(LONGITUDE, LATITUDE))/1000) %>% 
-  dplyr::mutate(dist_llb_km = distHaversine(cbind(-112.0588889 , 54.8563889), cbind(LONGITUDE, LATITUDE))/1000) %>% 
-  dplyr::mutate(dist_rmh_km = distHaversine(cbind(-114.9182, 52.37934320), cbind(LONGITUDE, LATITUDE))/1000)
- 
+  dplyr::mutate(dist_edm_km = distHaversine(cbind(-113.323975, 53.631611), cbind(`Longitude`, `Latitude`))/1000,
+                dist_cal_km = distHaversine(cbind(-114.066666, 51.049999), cbind(`Longitude`, `Latitude`))/1000,
+                dist_ftm_km = distHaversine(cbind(-111.38103, 56.72676), cbind(`Longitude`, `Latitude`))/1000, 
+                dist_pr_km = distHaversine(cbind(-117.289993, 56.237293), cbind(`Longitude`, `Latitude`))/1000,
+                dist_gp_km = distHaversine(cbind(-118.80271, 55.16667), cbind(`Longitude`, `Latitude`))/1000, 
+                dist_whct_km = distHaversine(cbind(-115.683, 54.133), cbind(`Longitude`, `Latitude`))/1000, 
+                dist_eds_km = distHaversine(cbind(-116.416667, 53.583333), cbind(`Longitude`, `Latitude`))/1000, 
+                dist_slave_km = distHaversine(cbind(-114.76896, 55.28344), cbind(`Longitude`, `Latitude`))/1000, 
+                dist_llb_km = distHaversine(cbind(-112.0588889 , 54.8563889), cbind(`Longitude`, `Latitude`))/1000, 
+                dist_rmh_km = distHaversine(cbind(-114.9182, 52.37934320), cbind(`Longitude`, `Latitude`))/1000)
 new_wf_ml <- distance_appended %>%
-dplyr::mutate(closest_city = pmin(dist_edm_km,dist_cal_km,dist_ftm_km,dist_pr_km,dist_gp_km,dist_whct_km,dist_eds_km,dist_slave_km,dist_llb_km,dist_rmh_km))%>%
-  dplyr::select(1:11,22)
+dplyr::mutate(`Closest City` = do.call(pmin,select(.,contains("dist")))) %>% 
+                
+dplyr::select(!(contains("dist")))
 new_wf_ml
 
 ```
 
-```{r}
+# Fire Size Proximity to City
+
+Time and distance are the most important factors when creating wildfire policy. Time is important as fires grow at an exponential rate, the sooner a response is initiated the better. Distance is just as important as well as it determine the rate of which resources can respond to the fire. This plot below showcases the relationship between each fire and the respective distance to the city, large fires are defined by any fire with an area larger than 2000 hectares while small is anything less than 2000.
+
+```{r echo = FALSE}
 #basic analysis on closest city 
-small_fires <- ml_wf_data %>% 
-  dplyr::filter(FIRST_EX_SIZE_PERIMETER < 2000)
-
-small_fires_stats <- small_fires %>% 
-   ungroup() %>% 
-   dplyr::summarise(mean_dist = mean(closest_city),
-                    sd_dist = sd(closest_city),
-                    closest_dist = min(closest_city),
-                    furthest_dist = max(closest_city))
-small_fires_stats
 
 
+fire_size <- new_wf_ml %>% 
+  dplyr::mutate(`Fire Size Class` = ifelse(`Current Size` >2000, "Large","Small")) %>% 
+  group_by(`Fire Size Class`)
 
 
-large_fires <- ml_wf %>% 
-  dplyr::filter(FIRST_EX_SIZE_PERIMETER > 2000)
+fire_size_stats <- fire_size %>% 
+   dplyr::summarise(mean_dist = mean(`Closest City`),
+                    sd_dist = sd(`Closest City`),
+                    closest_dist = min(`Closest City`),
+                    furthest_dist = max(`Closest City`),
+                    median_dist = median(`Closest City`))
 
-large_fires_stats <- large_fires %>% 
-  ungroup() %>% 
-   dplyr::summarise(mean_dist = mean(closest_city),
-                    sd_dist = sd(closest_city),
-                    closest_dist = min(closest_city),
-                    furthest_dist = max(closest_city))
-large_fires_stats
+#fire_size_stats
 
+fire_size_graph <- fire_size %>% 
+ggplot2::ggplot(ggplot2::aes(x = `Closest City`, y = log(`Current Size`), 
+                             color = `Fire Size Class` , shape = `Fire Size Class`)) +
+  ggplot2::geom_point(alpha = .5, size = 2) + 
+  ggplot2::labs(
+    title = "Fire Size vs Closest City",
+    x = "Closest City (km)",
+    y = "fire size (ha)",
+    color = NULL,
+    shape = NULL,
+    subtitle = "log scaled"
+  )+ 
+  ggplot2::theme_minimal() +
+  ggplot2::theme(
+    legend.position = "bottom",
+    plot.title = element_text(face = "bold"),
+    legend.text = element_text(size = 10),
+    panel.border = element_rect(color = "black", fill = NA, linewidth =.05),
+    panel.background = element_rect(fill = "white", color = NA)
+  )
+
+
+fire_size_graph
+
+
+#not correlated 
+#stats::cor(fire_size$`Current Size`, fire_size$`Closest City`)
 ```
 
-```{r}
+As you can see above, no real real visual relationship occurs. If anything there are more large fires closer to cities than further, which indicates that fires are not being left alone to grow. To further test this, the static correlation between the fire sizes and proximity to the city was calculated, with a value of .025 which supports the initial idea.
+
+------------------------------------------------------------------------
+
+# Machine Learning Model 1 - Simple Linear Regression
+
+To further understand the underlying issues behind large fires, three separate models were chosen to explore what impacts fire size. The first of which being a simple linear regression model. This model comprises of 11 separate predictors [see in appendix]. After running the model we get the following statistics;
+
+```{r echo = FALSE, message= FALSE, warning= FALSE }
 # ML model
 
 library(rsample)
@@ -98,20 +177,20 @@ library(parsnip)
 library(yardstick)
 library(broom)
 
-
+set.seed(123)
 
 split_wf <- new_wf_ml %>% 
-  rsample::initial_split(prop = .7, strata = GENERAL_CAUSE)
-
+  rsample::initial_split(prop = .7)
 train_wf <- rsample::training(split_wf)
 test_wf <- rsample::testing(split_wf)
 
-wf_feats <- recipes::recipe(CURRENT_SIZE ~., data = train_wf) %>% 
-  recipes::step_rm(FIRE_START_DATE) %>% 
-  recipes::step_log(CURRENT_SIZE) %>% 
+wf_feats <- recipes::recipe(`Current Size` ~., data = train_wf) %>% 
+  recipes::step_rm(`Fire Start Date`) %>% 
+  recipes::step_log(`Current Size`) %>% 
   recipes::step_normalize(all_numeric()) %>% 
-  recipes::step_unknown(WIND_DIRECTION) %>% 
-  recipes::step_dummy(GENERAL_CAUSE,WIND_DIRECTION,FUEL_TYPE) %>% 
+  recipes::step_unknown(`Wind Direction`) %>% 
+  recipes::step_novel(`Fuel Type`) %>% 
+  recipes::step_dummy(`General Cause`,`Wind Direction`,`Fuel Type`) %>% 
   recipes::prep()
 
 train_baked <- recipes::bake(wf_feats, train_wf)
@@ -121,65 +200,573 @@ test_baked <- recipes::bake(wf_feats, test_wf)
 wf_lm <- 
   parsnip::linear_reg(mode = "regression") %>% 
   parsnip::set_engine("lm") %>% 
-  parsnip::fit(CURRENT_SIZE ~., data = train_baked)
+  parsnip::fit(`Current Size` ~., data = train_baked)
 
 out <- wf_lm %>% 
   stats::predict(new_data = test_baked) %>%
-  dplyr::bind_cols(CURRENT_SIZE = test_baked %>% 
+  dplyr::bind_cols(`Current Size` = test_baked %>% 
                      dplyr::ungroup() %>% 
-                     dplyr::select(CURRENT_SIZE))
+                     dplyr::select(`Current Size`))
 
-parsnip::tidy(wf_lm)
-parsnip::glance(wf_lm)
+pred_chart <- wf_feats$var_info$variable
 
-wf_lm %>% 
+
+wf_lm_stats <- wf_lm %>% 
   stats::predict(new_data = test_baked) %>% 
-  dplyr::bind_cols(CURRENT_SIZE = test_baked %>% 
+  dplyr::bind_cols(`Current Size` = test_baked %>% 
   dplyr::ungroup() %>% 
-  dplyr::select(CURRENT_SIZE)) %>% 
-  yardstick::metrics(truth = CURRENT_SIZE, estimate = .pred) %>% 
+  dplyr::select(`Current Size`)) %>% 
+  yardstick::metrics(truth = `Current Size`, estimate = .pred) %>% 
   dplyr::arrange(.metric)
-wf_lm
 
-parsnip::glance(wf_lm)
+gt_lm_stats <- wf_lm_stats %>% 
+  gt::gt() %>% 
+  gt::fmt_percent(columns = !matches(".metric"),decimals = 1) %>% 
+  gt::cols_label(.metric = md("**Metric**"),
+                 .estimator = md("**Estimator**"),
+                 .estimate = md("**Estimate**")
+  )
+pred_chart <- wf_feats$var_info$variable %>% 
+  as.data.frame() %>% 
+  dplyr::rename(.,Predictors = `.`) %>% 
+  dplyr::slice(1:11) %>% 
+  gt::gt()
+#pred_chart
+
+gt_lm_stats
+
+#parsnip::glance(wf_lm)
+
+
+
 ```
 
-```{r}
-library(rpart.plot)
+yap more about it 
+
+
+
+
+
+
+
+------------------------------------------------------------------------
+
+# Machine Learning Model 2 - Extreme Gradient Boost
+
+Continuing on, the second model being utilized is an Extreme Gradient Boost regression model. As this model contains many non linear relationships; such as wind direction and fuel type- a more robust model is needed. The same predictors are being utilized for this model. 
+
+```{r echo = FALSE, message= FALSE, warning= FALSE}
+
+# 
+
+xg_reg <- 
+  parsnip::boost_tree(mode = "regression") %>% 
+  parsnip::set_engine("xgboost") %>% 
+  parsnip::fit(`Current Size` ~., data = train_baked)
+
+xg_out <- xg_reg %>% 
+  stats::predict(new_data = test_baked) %>%
+  dplyr::bind_cols(`Current Size` = test_baked %>% 
+                     dplyr::ungroup() %>% 
+                     dplyr::select(`Current Size`))
+
+
+xg_reg_stats <- xg_reg %>% 
+  stats::predict(new_data = test_baked) %>% 
+  dplyr::bind_cols(`Current Size` = test_baked %>% 
+  dplyr::ungroup() %>% 
+  dplyr::select(`Current Size`)) %>% 
+  yardstick::metrics(truth = `Current Size`, estimate = .pred) %>% 
+  dplyr::arrange(.metric)
+#xg_reg_stats
+
+#plot
+
+#xg_reg
+xgboost_tree <- extract_fit_engine(xg_reg) %>% 
+  xgb.model.dt.tree(., use_int_id = TRUE) %>% 
+  xgb.ggplot.importance(.,top_n = 10) +
+  ggplot2::labs(
+  title =  "Feature Importance",
+  x = "Importance",
+  y = "Elements",
+  caption = "XGBoost Model"
+  )+ 
+  ggplot2::theme(
+    legend.position = "bottom",
+    plot.title = element_text(face = "bold"),
+    legend.text = element_text(size = 10),
+    panel.border = element_rect(color = "black", fill = NA, linewidth =.05),
+    panel.background = element_rect(fill = "white", color = NA)
+  )
+
+xgboost_tree
+
+
+gt_xg_stats <- xg_reg_stats %>% 
+  gt::gt() %>% 
+  gt::fmt_percent(columns = !matches(".metric"),decimals = 1) %>% 
+  gt::cols_label(.metric = md("**Metric**"),
+                 .estimator = md("**Estimator**"),
+                 .estimate = md("**Estimate**")
+  )
+
+
+#gt_xg_stats  
+```
+
+As shown above, relative humidity is the most important feature. This is to be expected as dry material is more easily flammable and spreads faster. Both location and wind speed are important factors as well, location will get explored later in the map section and wind speed affects wildfires in multiple ways; adding oxygen to fires and it also creates wind desiccation which causes moisture to be sucked out of plants- creating a very negative fire environment (RHS, 2026)! C2 Fuel type is characterized as boreal spruce, or evergreen forests, as evergreen forests are prone to desiccation and produce a very flammable resin. The final point of interest is month 5, may- this is widely reported to be one of the most prominent fire activity months as temperature begins to rise and snow melts. Knowing these factors gives additional insight into how to spot the warning signs for a potential fire.
+
+This model is a modest improvement from the original linear regression, with an R^2 value 5% higher, and lower error.
+
+```{r echo=FALSE}
+gt_xg_stats
+```
+
+
+Knowing these factors gives additional insight into how to spot the warning signs for a potential fire.
+
+
+
+
+# Machine Learning Model 3 - Decision Tree
+
+
+The final model in this report is a decision tree, this "branches" off of the previous model and utilize the factors below. 
+```{r echo = FALSE, message= FALSE, warning= FALSE}
 
 recipe_pipeline <- 
-  recipes::recipe(CURRENT_SIZE ~ GENERAL_CAUSE + TEMPERATURE+ RELATIVE_HUMIDITY + WIND_SPEED + FUEL_TYPE, data = test_wf) %>% 
-  step_log(CURRENT_SIZE) %>%
+  recipes::recipe(`Current Size` ~ `General Cause` + `Temperature`+ `Relative Humidity` + `Wind Speed` + `Fuel Type`, data = test_wf) %>% 
+  step_log(`Current Size`) %>%
+  step_normalize(all_numeric()) %>% 
   recipes::prep()
 
-train_baked<-  recipes::bake(recipe_pipeline, train_wf)
-test_baked <- recipes::bake(recipe_pipeline, test_wf)
+tree_train_baked<-  recipes::bake(recipe_pipeline, train_wf)
+tree_test_baked <- recipes::bake(recipe_pipeline, test_wf)
 
 
 model_cart <- parsnip::decision_tree(mode = "regression") %>% 
   parsnip::set_engine("rpart") %>% 
-  parsnip::fit(CURRENT_SIZE ~ GENERAL_CAUSE + TEMPERATURE+ RELATIVE_HUMIDITY + WIND_SPEED + FUEL_TYPE, data = train_baked)
+  parsnip::fit(`Current Size` ~ `General Cause` + `Temperature`+ `Relative Humidity`+ `Wind Speed` + `Fuel Type`, data = tree_train_baked)
 
-model_cart
+#model_cart
 
 
-wf_tree <- rpart.plot(
+
+
+res <- model_cart %>% 
+  predict(new_data = tree_test_baked) %>% 
+  bind_cols(tree_test_baked %>% dplyr::select(`Current Size`)) %>% yardstick::metrics(truth = `Current Size`, estimate = .pred) %>% 
+  dplyr::arrange(.metric)
+#res
+
+
+```
+
+
+
+The reasoning for using these indicators is to create a model which can be used regardless of the time of year, and provides general insights for non-seasonal trends, as well as creates an easy to read visualization. The tree diagram is illustrated below.
+
+```{r echo = FALSE, message= FALSE, warning= FALSE}
+
+  rpart.plot(
   model_cart$fit,
+  type = 4,
   roundint = F,
   cex = .8,
   tweak = .65,
   fallen.leaves  = T,
   extra = "auto",
-  main = "Regression Tree"
+  main = "Predictors for Fire Size"
+) 
+
+```
+
+This model rates fuel type as the most divisive factor, a majority of the Coniferous fuel types are clustered- which helps support this model as research indicates coniferous fuel types are significantly more flammable due to the resin they produce. The proceeding factor both appear in the same order in the Extreme Gradient Boost model, which indicates an importance.
+
+```{r include = FALSE, echo = FALSE, message= FALSE, warning= FALSE}
+# running my java script
+
+economic_data <- system("node scraper.js", intern = TRUE) %>% 
+  jsonlite::fromJSON() %>%
+  dplyr::as_tibble()
+
+#I hate accidentally running this chunk again so its separate from the follow up work
+```
+
+```{r include = FALSE, echo = FALSE, message= FALSE, warning= FALSE}
+
+
+
+top_income <- economic_data$indicators$`median-family-income`$top
+bot_income <- economic_data$indicators$`median-family-income`$bottom
+top_fn <- economic_data$indicators$`percent-aboriginal-population`$top
+bot_fn <- economic_data$indicators$`percent-aboriginal-population`$bottom
+
+top_income
+
+# looking at distances for each of these different data sets
+
+#median household income by municipality
+
+top_income_distance <- ml_wf_data %>% 
+  dplyr::ungroup() %>% 
+      dplyr::mutate(Distance1 = distHaversine(cbind(top_income$lon[1], top_income$lat[1]), cbind(`Longitude`, `Latitude`))/1000,
+                    Distance2 = distHaversine(cbind(top_income$lon[2], top_income$lat[2]), cbind(`Longitude`, `Latitude`))/1000,
+                    Distance3 = distHaversine(cbind(top_income$lon[3], top_income$lat[3]), cbind(`Longitude`, `Latitude`))/1000,
+                    Distance4 = distHaversine(cbind(top_income$lon[4], top_income$lat[4]), cbind(`Longitude`, `Latitude`))/1000,
+                    Distance5 = distHaversine(cbind(top_income$lon[5], top_income$lat[5]), cbind(`Longitude`, `Latitude`))/1000,
+                    Distance6 = distHaversine(cbind(top_income$lon[6], top_income$lat[6]), cbind(`Longitude`, `Latitude`))/1000,
+                    Distance7 = distHaversine(cbind(top_income$lon[7], top_income$lat[7]), cbind(`Longitude`, `Latitude`))/1000,
+                    Distance8 = distHaversine(cbind(top_income$lon[8], top_income$lat[8]), cbind(`Longitude`, `Latitude`))/1000,
+                    Distance9 = distHaversine(cbind(top_income$lon[9], top_income$lat[9]), cbind(`Longitude`, `Latitude`))/1000,
+                    Distance10 = distHaversine(cbind(top_income$lon[10], top_income$lat[10]), cbind(`Longitude`, `Latitude`))/1000) %>%
+ dplyr::ungroup() %>% 
+ dplyr::mutate(closest_municipality = do.call(pmin,select(.,contains("Dist")))) %>% dplyr::select(!(contains("DIst")))
+
+bot_income_distance <- ml_wf_data %>% 
+  dplyr::ungroup() %>% 
+      dplyr::mutate(Distance1 = distHaversine(cbind(bot_income$lon[1], bot_income$lat[1]), cbind(`Longitude`, `Latitude`))/1000,
+                    Distance2 = distHaversine(cbind(bot_income$lon[2], bot_income$lat[2]), cbind(`Longitude`, `Latitude`))/1000,
+                    Distance3 = distHaversine(cbind(bot_income$lon[3], bot_income$lat[3]), cbind(`Longitude`, `Latitude`))/1000,
+                    Distance4 = distHaversine(cbind(bot_income$lon[4], bot_income$lat[4]), cbind(`Longitude`, `Latitude`))/1000,
+                    Distance5 = distHaversine(cbind(bot_income$lon[5], bot_income$lat[5]), cbind(`Longitude`, `Latitude`))/1000,
+                    Distance6 = distHaversine(cbind(bot_income$lon[6], bot_income$lat[6]), cbind(`Longitude`, `Latitude`))/1000,
+                    Distance7 = distHaversine(cbind(bot_income$lon[7], bot_income$lat[7]), cbind(`Longitude`, `Latitude`))/1000,
+                    Distance8 = distHaversine(cbind(bot_income$lon[8], bot_income$lat[8]), cbind(`Longitude`, `Latitude`))/1000,
+                    Distance9 = distHaversine(cbind(bot_income$lon[9], bot_income$lat[9]), cbind(`Longitude`, `Latitude`))/1000,
+                    Distance10 = distHaversine(cbind(bot_income$lon[10], bot_income$lat[10]), cbind(`Longitude`, `Latitude`))/1000) %>%
+ dplyr::ungroup() %>% 
+ dplyr::mutate(closest_municipality = do.call(pmin,select(.,contains("Dist")))) %>% dplyr::select(!(contains("DIst")))
+
+# percentage of first nations by municipality
+
+top_fn_distance <- ml_wf_data %>% 
+  dplyr::ungroup() %>% 
+      dplyr::mutate(Distance1 = distHaversine(cbind(top_fn$lon[1], top_fn$lat[1]), cbind(`Longitude`, `Latitude`))/1000,
+                    Distance2 = distHaversine(cbind(top_fn$lon[2], top_fn$lat[2]), cbind(`Longitude`, `Latitude`))/1000,
+                    Distance3 = distHaversine(cbind(top_fn$lon[3], top_fn$lat[3]), cbind(`Longitude`, `Latitude`))/1000,
+                    Distance4 = distHaversine(cbind(top_fn$lon[4], top_fn$lat[4]), cbind(`Longitude`, `Latitude`))/1000,
+                    Distance5 = distHaversine(cbind(top_fn$lon[5], top_fn$lat[5]), cbind(`Longitude`, `Latitude`))/1000,
+                    Distance6 = distHaversine(cbind(top_fn$lon[6], top_fn$lat[6]), cbind(`Longitude`, `Latitude`))/1000,
+                    Distance7 = distHaversine(cbind(top_fn$lon[7], top_fn$lat[7]), cbind(`Longitude`, `Latitude`))/1000,
+                    Distance8 = distHaversine(cbind(top_fn$lon[8], top_fn$lat[8]), cbind(`Longitude`, `Latitude`))/1000,
+                    Distance9 = distHaversine(cbind(top_fn$lon[9], top_fn$lat[9]), cbind(`Longitude`, `Latitude`))/1000,
+                    Distance10 = distHaversine(cbind(top_fn$lon[10], top_fn$lat[10]), cbind(`Longitude`, `Latitude`))/1000) %>%
+ dplyr::ungroup() %>% 
+ dplyr::mutate(closest_municipality = do.call(pmin,select(.,contains("Dist")))) %>% dplyr::select(!(contains("DIst")))
+
+
+
+bot_fn_distance <- ml_wf_data %>% 
+  dplyr::ungroup() %>% 
+      dplyr::mutate(Distance1 = distHaversine(cbind(bot_fn$lon[1], bot_fn$lat[1]), cbind(`Longitude`, `Latitude`))/1000,
+                    Distance2 = distHaversine(cbind(bot_fn$lon[2], bot_fn$lat[2]), cbind(`Longitude`, `Latitude`))/1000,
+                    Distance3 = distHaversine(cbind(bot_fn$lon[3], bot_fn$lat[3]), cbind(`Longitude`, `Latitude`))/1000,
+                    Distance4 = distHaversine(cbind(bot_fn$lon[4], bot_fn$lat[4]), cbind(`Longitude`, `Latitude`))/1000,
+                    Distance5 = distHaversine(cbind(bot_fn$lon[5], bot_fn$lat[5]), cbind(`Longitude`, `Latitude`))/1000,
+                    Distance6 = distHaversine(cbind(bot_fn$lon[6], bot_fn$lat[6]), cbind(`Longitude`, `Latitude`))/1000,
+                    Distance7 = distHaversine(cbind(bot_fn$lon[7], bot_fn$lat[7]), cbind(`Longitude`, `Latitude`))/1000,
+                    Distance8 = distHaversine(cbind(bot_fn$lon[8], bot_fn$lat[8]), cbind(`Longitude`, `Latitude`))/1000,
+                    Distance9 = distHaversine(cbind(bot_fn$lon[9], bot_fn$lat[9]), cbind(`Longitude`, `Latitude`))/1000,
+                    Distance10 = distHaversine(cbind(bot_fn$lon[10], bot_fn$lat[10]), cbind(`Longitude`, `Latitude`))/1000) %>%
+ dplyr::ungroup() %>% 
+ dplyr::mutate(closest_municipality = do.call(pmin,select(.,contains("Dist")))) %>% dplyr::select(!(contains("DIst")))
+
+
+bot_income_stats <- bot_income_distance %>% 
+    dplyr::summarise(`Mean Distance` = round(mean(closest_municipality),2),
+                    `Sd Distance` = round(sd(closest_municipality),2),
+                    `Closest Distance` = round(min(closest_municipality),2),
+                    `Furthest Distance` = round(max(closest_municipality),2),
+                    `Median Distance` = round(median(closest_municipality),2)) %>% 
+  dplyr::mutate(Title = "Bottom Income Municipalities") %>% 
+  dplyr::relocate("Title",.before = `Mean Distance`)
+
+top_income_stats <- top_income_distance %>% 
+    dplyr::summarise(`Mean Distance` = round(mean(closest_municipality),2),
+                    `Sd Distance` = round(sd(closest_municipality),2),
+                    `Closest Distance` = round(min(closest_municipality),2),
+                    `Furthest Distance` = round(max(closest_municipality),2),
+                    `Median Distance` = round(median(closest_municipality),2)) %>% 
+  dplyr::mutate(Title = "Top Income Municipalities") %>% 
+  dplyr::relocate("Title",.before = `Mean Distance`)
+
+top_fn_stats <- top_fn_distance %>% 
+      dplyr::summarise(`Mean Distance` = round(mean(closest_municipality),2),
+                    `Sd Distance` = round(sd(closest_municipality),2),
+                    `Closest Distance` = round(min(closest_municipality),2),
+                    `Furthest Distance` = round(max(closest_municipality),2),
+                    `Median Distance` = round(median(closest_municipality),2)) %>% 
+  dplyr::mutate(Title = "Highest First Nations Population") %>% 
+  dplyr::relocate("Title",.before = `Mean Distance`)
+  
+
+bot_fn_stats <- bot_fn_distance %>% 
+     dplyr::summarise(`Mean Distance` = round(mean(closest_municipality),2),
+                    `Sd Distance` = round(sd(closest_municipality),2),
+                    `Closest Distance` = round(min(closest_municipality),2),
+                    `Furthest Distance` = round(max(closest_municipality),2),
+                    `Median Distance` = round(median(closest_municipality),2)) %>% 
+  dplyr::mutate(Title = "Lowest First Nations Population") %>% 
+  dplyr::relocate("Title",.before = `Mean Distance`)
+
+comb_stats <- do.call("rbind", list(top_income_stats,bot_income_stats,top_fn_stats, bot_fn_stats))
+
+
+
+```
+
+# Machine Learning Conclusion
+
+While there are large gaps in the model such as nearly 80% of variance being unexplained, these three models combined may prove useful as a basis for flagging dangerous conditions. To summarize, there are three red flag factors to pay attention to; Coniferous fuels, high winds, and low moisture. Areas that have these conditions should be on high alert, and ready to respond to any wildfires.
+
+***
+
+# Does wildfire response have a bias?
+
+It is an unfortunate reality that some groups of people are treated worse by the governing organization, as the impact of wildfires can be life altering- potential biases and inconsistencies should be noted and adjusted. The table below showcases what appears to be bias.
+
+```{r echo = FALSE}
+
+table_comb <- comb_stats %>%
+  gt(
+    groupname_col = "Title",
+    row_group_as_column = TRUE
+  ) %>% 
+  tab_header(
+    title = "Fire Proximaty Statistics",
+    subtitle = "Distance in Meters"
+  ) %>% 
+  tab_footnote(
+    footnote = md("We see that lower income and higher first nations populations are closest to wildfires.")
+  ) %>% 
+  data_color(
+    method = "numeric",
+
+    palette = c("darkred","#FFBF00")
+  )
+
+table_comb
+```
+
+The analysis of this graph indicates that municipalities that are low income or primarily first nations are the most impacted by wildfires. However this graph alone doesn't prove bias or poor governance. Shown below are the both plots for income level, and first nations population.
+
+```{r include = FALSE, echo = FALSE, message= FALSE, warning= FALSE}
+
+top_income_distance
+bot_income_distance
+
+join_income <- top_income_distance %>% 
+  dplyr::mutate(closest_municipality_bot = bot_income_distance$closest_municipality) %>% 
+  dplyr::mutate(income_level = ifelse(closest_municipality>closest_municipality_bot,"Low Median Family Income","High Median Family Income")) %>% 
+  dplyr::mutate(closest = pmin(closest_municipality,closest_municipality_bot))
+
+join_fn <- top_fn_distance %>% 
+  dplyr::mutate(closest_municipality_bot = bot_fn_distance$closest_municipality) %>% 
+  dplyr::mutate(income_level = ifelse(closest_municipality>closest_municipality_bot,"Low First Nations Population","High First Nations Population")) %>% 
+  dplyr::mutate(closest = pmin(closest_municipality,closest_municipality_bot))
+
+
+join_income
+join_fn
+```
+
+```{r echo = FALSE}
+
+income_size_graph <- join_income %>% 
+ggplot2::ggplot(ggplot2::aes(x = closest, y = log(`Current Size`), 
+                             color = income_level, shape = income_level)) +
+  ggplot2::geom_point(alpha = .5, size = 2) + 
+  ggplot2::labs(
+    title = "Fire Size vs Closest City Distance",
+    x = "Closest City (km)",
+    y = "Fire Size (ha)",
+    caption = "Source: Government of Alberta",
+    colour = NULL,
+    shape = NULL,
+    subtitle = "Log Scale"
+  )+ 
+  ggplot2::theme_minimal() +
+  ggplot2::theme(
+    legend.position = "bottom",
+    plot.title = element_text(face = "bold"),
+    legend.text = element_text(size = 10),
+    panel.border = element_rect(color = "black", fill = NA, linewidth =.05),
+    panel.background = element_rect(fill = "white", color = NA)
+  )
+
+income_size_graph
+
+
+fn_size_graph <- join_fn %>% 
+ggplot2::ggplot(ggplot2::aes(x = closest, y = log(`Current Size`), 
+                             color = income_level, shape = income_level)) +
+  ggplot2::geom_point(alpha = .5, size = 2) + 
+  ggplot2::labs(
+    title = "Fire Size vs Closest City Distance",
+    x = "Closest City (km)",
+    y = "Fire Size (ha)",
+    caption = "Source: Government of Alberta",
+    colour = NULL,
+    shape = NULL,
+    subtitle = "Log Scale"
+  )+ 
+  ggplot2::theme_minimal() +
+  ggplot2::theme(
+    legend.position = "bottom",
+    plot.title = element_text(face = "bold"),
+    legend.text = element_text(size = 10),
+    panel.border = element_rect(color = "black", fill = NA, linewidth =.05),
+    panel.background = element_rect(fill = "white", color = NA)
+  )
+
+#fn_size_graph
+```
+***
+```{r echo=FALSE}
+fn_size_graph
+```
+
+***
+
+# Interactive Map
+
+When the data of the previous graphs gets inputted onto a map, the story becomes much more clear.
+
+```{r echo = FALSE}
+#creating a map!
+
+mar_icons <- awesomeIconList(
+  `Top First Nations` = makeAwesomeIcon(
+  icon = "home",
+  library = "glyphicon",
+  markerColor = "darkgreen",
+  iconColor = "white",
+  
+),
+`Bottom First Nations` = makeAwesomeIcon(
+  icon = "home",
+  library = "glyphicon",
+  markerColor = "darkred",
+  iconColor = "black",
+),
+`Top Income` = makeAwesomeIcon(
+  icon = "usd",
+  library = "glyphicon",
+  markerColor = "green",
+  iconColor = "white",
+),
+`Bottom Income` = makeAwesomeIcon(
+  icon = "usd",
+  library = "glyphicon",
+  markerColor = "red",
+  iconColor = "black",
+))
+
+
+
+filt_data <- ml_wf_data %>% 
+  dplyr::filter(`Current Size` >3000)
+
+palette <- colorNumeric(
+  palette = "RdYlGn",
+  domain = filt_data$`Current Size`,
+  reverse = TRUE
 )
 
+m <- leaflet(data = filt_data) %>%
+  addTiles() %>% # Add default OpenStreetMap map tiles
+  addMarkers(lng = -113.32 , lat = 53.63) %>% 
+  addCircles(
+    ~`Longitude` , ~`Latitude`,
+    radius = ~sqrt(`Current Size`*10000/3.14),
+    color = ~palette(`Current Size`),
+    stroke = FALSE, fillOpacity = .67
+    
+  ) %>% 
+  addLegend("bottomright", pal = palette, values = ~`Current Size`,
+            title = "Wildfire Size (ha)"
+  ) %>%
+  addAwesomeMarkers(
+    data = top_fn,
+    ~lon, ~lat,
+    icon = mar_icons$`Top First Nations`
+  )%>%
+  addAwesomeMarkers(
+    data = bot_fn,
+    ~lon, ~lat,
+    icon = mar_icons$`Bottom First Nations`
+  )%>%
+  addAwesomeMarkers(
+    data = bot_income,
+    ~lon, ~lat,
+    icon = mar_icons$`Bottom Income`
+  )%>%
+  addAwesomeMarkers(
+    data = top_income,
+    ~lon, ~lat,
+    icon = mar_icons$`Top Income`
+  ) %>% 
+  addLegendAwesomeIcon(
+    iconSet = mar_icons,
+    orientation = "vertical",
+    title = "Marker Legend",
+    position = "bottomleft",
+    labelStyle = "font-size: 10px;"
+  ) 
 
+m
 
-res <- model_cart %>% 
-  predict(new_data = test_baked) %>% 
-  bind_cols(test_baked %>% dplyr::select(CURRENT_SIZE)) %>% yardstick::metrics(truth = CURRENT_SIZE, estimate = .pred) %>% 
-  dplyr::arrange(.metric)
-res
-
-glimpse(train_baked)
 ```
+
+As shown above, there is a large variation in where high/low income municipalities are situated, and non first nations municipalities are situated in areas where no wildfires occur due to geography, in fact they are located within an area called "Non Forest Protection Area"- as such there are no wildfires. 
+
+Areas with a high First Nations population are reserves, typically found in northern/rural Alberta. Unfortunately, due to the isolation aspect many of these areas have slow fire response times. This does present an opportunity for both the province and the First Nations. 
+
+***
+
+# Recommendation 1
+
+Employment opportunities are scarce on reserves according to indigenous Services and Statistics Canada, with an employment rate of 47% compared to the national average of 74%. One way to combat this is through employment opportunities within Wildfire firefighting and support. Currently the province employs firefighters through the "Firetack" program however historically this program has been more like exploitation than employment. The province contracts eight person crews that function similarly to wage wild land firefighters, no official pay grid is available to the public.
+
+In the most recent Alberta Wildfire Payment Directive pay is listed for emergency non-contract hiring. Some notable figures are the Firetack Leader and member which are listed at $22.08 and $20.97 per hour respectfully. As of April 1st 2026, the lowest a wage wildland firefighter member can make is $23.80 an hour.
+
+As the province is facing extreme turnover for seasonal positions, it should look towards a more sustainable employment program with First Nations- a compromise that would benefit both parties. 
+
+***
+
+# Recommendation 2
+
+There should be a greater emphasis on preventive measures to ensure rural fires don't remain undetected. With advancements in drone and infrared technology, tower observers could be trained and equipped with drones that could help survey the land and detect any hot-spots or early start fires. Large scale wildfires can cost millions of dollars a day, whereas state of the art drones may cost a fraction of that, between $10-20,000. 
+
+
+***
+
+# Conclusion
+
+Wildfires will continue to be a part of every Albertan's life as they are a natural occurrence and can't completely be prevented. What can be changed is how prepared and proactive the province is, doing so can; prevent damages, create employment opportunities and invest in future technology.
+
+
+# Appendix 
+
+Figure [1] - Machine Learning Model 1 Predictors
+
+
+```{r echo=FALSE}
+pred_chart
+```
+
+
+
+
+
+# Citations 
+
+
+https://www.rhs.org.uk/prevention-protection/wind-scorch
+https://www.sac-isc.gc.ca/eng/1690909773300/1690909797208#chp3-3
+https://www150.statcan.gc.ca/n1/pub/41-20-0002/412000022024002-eng.htm
+https://open.alberta.ca/dataset/e325baaf-e19a-4b31-a6c4-ee3e1b212472/resource/ac17ebca-a99f-410b-9508-0a65012033cf/download/fp-alberta-wildfire-payment-directive-2026-03.pdf
+https://pmc.ncbi.nlm.nih.gov/articles/PMC12246202/
+https://natural-resources.canada.ca/stories/simply-science/glimpse-future-boreal-forest-less-frequent-more-aggressive-fires

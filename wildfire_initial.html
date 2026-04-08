@@ -1,0 +1,2629 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.8.25">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+
+<title>Exploring Wildfire Causes and Provincial Responses</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+</style>
+
+
+<script src="wildfire_initial_files/libs/clipboard/clipboard.min.js"></script>
+<script src="wildfire_initial_files/libs/quarto-html/quarto.js" type="module"></script>
+<script src="wildfire_initial_files/libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="wildfire_initial_files/libs/quarto-html/axe/axe-check.js" type="module"></script>
+<script src="wildfire_initial_files/libs/quarto-html/popper.min.js"></script>
+<script src="wildfire_initial_files/libs/quarto-html/tippy.umd.min.js"></script>
+<script src="wildfire_initial_files/libs/quarto-html/anchor.min.js"></script>
+<link href="wildfire_initial_files/libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="wildfire_initial_files/libs/quarto-html/quarto-syntax-highlighting-7b89279ff1a6dce999919e0e67d4d9ec.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="wildfire_initial_files/libs/bootstrap/bootstrap.min.js"></script>
+<link href="wildfire_initial_files/libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="wildfire_initial_files/libs/bootstrap/bootstrap-9e3ffae467580fdb927a41352e75a2e0.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<link href="wildfire_initial_files/libs/htmltools-fill-0.5.9/fill.css" rel="stylesheet">
+
+<script src="wildfire_initial_files/libs/htmlwidgets-1.6.4/htmlwidgets.js"></script>
+
+<script src="wildfire_initial_files/libs/jquery-3.6.0/jquery-3.6.0.min.js"></script>
+
+<link href="wildfire_initial_files/libs/leaflet-1.3.1/leaflet.css" rel="stylesheet">
+
+<script src="wildfire_initial_files/libs/leaflet-1.3.1/leaflet.js"></script>
+
+<link href="wildfire_initial_files/libs/leafletfix-1.0.0/leafletfix.css" rel="stylesheet">
+
+<script src="wildfire_initial_files/libs/proj4-2.6.2/proj4.min.js"></script>
+
+<script src="wildfire_initial_files/libs/Proj4Leaflet-1.0.1/proj4leaflet.js"></script>
+
+<link href="wildfire_initial_files/libs/rstudio_leaflet-1.3.1/rstudio_leaflet.css" rel="stylesheet">
+
+<script src="wildfire_initial_files/libs/leaflet-binding-2.2.3/leaflet.js"></script>
+
+<link href="wildfire_initial_files/libs/leaflet-awesomemarkers-2.0.3/leaflet.awesome-markers.css" rel="stylesheet">
+
+<script src="wildfire_initial_files/libs/leaflet-awesomemarkers-2.0.3/leaflet.awesome-markers.min.js"></script>
+
+
+
+</head>
+
+<body class="quarto-light">
+
+<div id="quarto-content" class="page-columns page-rows-contents page-layout-article">
+<div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+  <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">Table of contents</h2>
+   
+  <ul>
+  <li><a href="#initial-summary" id="toc-initial-summary" class="nav-link active" data-scroll-target="#initial-summary">Initial Summary</a></li>
+  <li><a href="#methodology" id="toc-methodology" class="nav-link" data-scroll-target="#methodology">Methodology</a></li>
+  <li><a href="#limitations" id="toc-limitations" class="nav-link" data-scroll-target="#limitations">Limitations</a></li>
+  <li><a href="#fire-size-proximity-to-city" id="toc-fire-size-proximity-to-city" class="nav-link" data-scroll-target="#fire-size-proximity-to-city">Fire Size Proximity to City</a></li>
+  <li><a href="#machine-learning-model-1---simple-linear-regression" id="toc-machine-learning-model-1---simple-linear-regression" class="nav-link" data-scroll-target="#machine-learning-model-1---simple-linear-regression">Machine Learning Model 1 - Simple Linear Regression</a></li>
+  <li><a href="#machine-learning-model-2---extreme-gradient-boost" id="toc-machine-learning-model-2---extreme-gradient-boost" class="nav-link" data-scroll-target="#machine-learning-model-2---extreme-gradient-boost">Machine Learning Model 2 - Extreme Gradient Boost</a></li>
+  <li><a href="#machine-learning-model-3---decision-tree" id="toc-machine-learning-model-3---decision-tree" class="nav-link" data-scroll-target="#machine-learning-model-3---decision-tree">Machine Learning Model 3 - Decision Tree</a></li>
+  <li><a href="#machine-learning-conclusion" id="toc-machine-learning-conclusion" class="nav-link" data-scroll-target="#machine-learning-conclusion">Machine Learning Conclusion</a></li>
+  <li><a href="#does-wildfire-response-have-a-bias" id="toc-does-wildfire-response-have-a-bias" class="nav-link" data-scroll-target="#does-wildfire-response-have-a-bias">Does wildfire response have a bias?</a></li>
+  <li><a href="#interactive-map" id="toc-interactive-map" class="nav-link" data-scroll-target="#interactive-map">Interactive Map</a></li>
+  <li><a href="#recommendation-1" id="toc-recommendation-1" class="nav-link" data-scroll-target="#recommendation-1">Recommendation 1</a></li>
+  <li><a href="#recommendation-2" id="toc-recommendation-2" class="nav-link" data-scroll-target="#recommendation-2">Recommendation 2</a></li>
+  <li><a href="#conclusion" id="toc-conclusion" class="nav-link" data-scroll-target="#conclusion">Conclusion</a></li>
+  <li><a href="#appendix" id="toc-appendix" class="nav-link" data-scroll-target="#appendix">Appendix</a></li>
+  <li><a href="#citations" id="toc-citations" class="nav-link" data-scroll-target="#citations">Citations</a></li>
+  </ul>
+</nav>
+</div>
+<main class="content" id="quarto-document-content">
+
+<header id="title-block-header" class="quarto-title-block default">
+<div class="quarto-title">
+<h1 class="title">Exploring Wildfire Causes and Provincial Responses</h1>
+</div>
+
+
+
+<div class="quarto-title-meta">
+
+    
+  
+    
+  </div>
+  
+
+
+</header>
+
+
+<section id="initial-summary" class="level1">
+<h1>Initial Summary</h1>
+<p>think of something …</p>
+</section>
+<section id="methodology" class="level1">
+<h1>Methodology</h1>
+<p>The data that is used for this analysis has been scraped from official Government of Alberta sources, location data has been scraped from Nominatim Opens street map. Government of Alberta sources include; 2006-2025 historical wildfire data, and Alberta Regional data. The Alberta Regional data includes the top and bottom ten values for both median family income and percentage of first nations in the municipality. Median family income that was reported at $0 was excluded as it is erroneous.</p>
+<hr>
+</section>
+<section id="limitations" class="level1">
+<h1>Limitations</h1>
+<p>This analysis has some limitations; firstly some data may be wrongly reported. For example, the minimum wildfire size that can be reported is .1 hectares, however any fire that is responded to by wildfire assets- is considered a wildfire. This creates reporting issues as car fires may be inaccurately listed as wildfires. As such, for a majority of this report only fires with areas larger than .11 hectares will be considered. Furthermore as per definition only fires that are started by; Lightning, restart or undetermined- will be considered as natural fires with the rest being considered human caused.</p>
+<hr>
+</section>
+<section id="fire-size-proximity-to-city" class="level1">
+<h1>Fire Size Proximity to City</h1>
+<p>Time and distance are the most important factors when creating wildfire policy. Time is important as fires grow at an exponential rate, the sooner a response is initiated the better. Distance is just as important as well as it determine the rate of which resources can respond to the fire. This plot below showcases the relationship between each fire and the respective distance to the city, large fires are defined by any fire with an area larger than 2000 hectares while small is anything less than 2000.</p>
+<div class="cell">
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="wildfire_initial_files/figure-html/unnamed-chunk-3-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+<p>As you can see above, no real real visual relationship occurs. If anything there are more large fires closer to cities than further, which indicates that fires are not being left alone to grow. To further test this, the static correlation between the fire sizes and proximity to the city was calculated, with a value of .025 which supports the initial idea.</p>
+<hr>
+</section>
+<section id="machine-learning-model-1---simple-linear-regression" class="level1">
+<h1>Machine Learning Model 1 - Simple Linear Regression</h1>
+<p>To further understand the underlying issues behind large fires, three separate models were chosen to explore what impacts fire size. The first of which being a simple linear regression model. This model comprises of 11 separate predictors [see in appendix]. After running the model we get the following statistics;</p>
+<div class="cell">
+<div class="cell-output-display">
+<div id="vwnngttdae" style="padding-left:0px;padding-right:0px;padding-top:10px;padding-bottom:10px;overflow-x:auto;overflow-y:auto;width:auto;height:auto;">
+<style>#vwnngttdae table {
+  font-family: system-ui, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+#vwnngttdae thead, #vwnngttdae tbody, #vwnngttdae tfoot, #vwnngttdae tr, #vwnngttdae td, #vwnngttdae th {
+  border-style: none;
+}
+
+#vwnngttdae p {
+  margin: 0;
+  padding: 0;
+}
+
+#vwnngttdae .gt_table {
+  display: table;
+  border-collapse: collapse;
+  line-height: normal;
+  margin-left: auto;
+  margin-right: auto;
+  color: #333333;
+  font-size: 16px;
+  font-weight: normal;
+  font-style: normal;
+  background-color: #FFFFFF;
+  width: auto;
+  border-top-style: solid;
+  border-top-width: 2px;
+  border-top-color: #A8A8A8;
+  border-right-style: none;
+  border-right-width: 2px;
+  border-right-color: #D3D3D3;
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #A8A8A8;
+  border-left-style: none;
+  border-left-width: 2px;
+  border-left-color: #D3D3D3;
+}
+
+#vwnngttdae .gt_caption {
+  padding-top: 4px;
+  padding-bottom: 4px;
+}
+
+#vwnngttdae .gt_title {
+  color: #333333;
+  font-size: 125%;
+  font-weight: initial;
+  padding-top: 4px;
+  padding-bottom: 4px;
+  padding-left: 5px;
+  padding-right: 5px;
+  border-bottom-color: #FFFFFF;
+  border-bottom-width: 0;
+}
+
+#vwnngttdae .gt_subtitle {
+  color: #333333;
+  font-size: 85%;
+  font-weight: initial;
+  padding-top: 3px;
+  padding-bottom: 5px;
+  padding-left: 5px;
+  padding-right: 5px;
+  border-top-color: #FFFFFF;
+  border-top-width: 0;
+}
+
+#vwnngttdae .gt_heading {
+  background-color: #FFFFFF;
+  text-align: center;
+  border-bottom-color: #FFFFFF;
+  border-left-style: none;
+  border-left-width: 1px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 1px;
+  border-right-color: #D3D3D3;
+}
+
+#vwnngttdae .gt_bottom_border {
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+}
+
+#vwnngttdae .gt_col_headings {
+  border-top-style: solid;
+  border-top-width: 2px;
+  border-top-color: #D3D3D3;
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+  border-left-style: none;
+  border-left-width: 1px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 1px;
+  border-right-color: #D3D3D3;
+}
+
+#vwnngttdae .gt_col_heading {
+  color: #333333;
+  background-color: #FFFFFF;
+  font-size: 100%;
+  font-weight: normal;
+  text-transform: inherit;
+  border-left-style: none;
+  border-left-width: 1px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 1px;
+  border-right-color: #D3D3D3;
+  vertical-align: bottom;
+  padding-top: 5px;
+  padding-bottom: 6px;
+  padding-left: 5px;
+  padding-right: 5px;
+  overflow-x: hidden;
+}
+
+#vwnngttdae .gt_column_spanner_outer {
+  color: #333333;
+  background-color: #FFFFFF;
+  font-size: 100%;
+  font-weight: normal;
+  text-transform: inherit;
+  padding-top: 0;
+  padding-bottom: 0;
+  padding-left: 4px;
+  padding-right: 4px;
+}
+
+#vwnngttdae .gt_column_spanner_outer:first-child {
+  padding-left: 0;
+}
+
+#vwnngttdae .gt_column_spanner_outer:last-child {
+  padding-right: 0;
+}
+
+#vwnngttdae .gt_column_spanner {
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+  vertical-align: bottom;
+  padding-top: 5px;
+  padding-bottom: 5px;
+  overflow-x: hidden;
+  display: inline-block;
+  width: 100%;
+}
+
+#vwnngttdae .gt_spanner_row {
+  border-bottom-style: hidden;
+}
+
+#vwnngttdae .gt_group_heading {
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+  color: #333333;
+  background-color: #FFFFFF;
+  font-size: 100%;
+  font-weight: initial;
+  text-transform: inherit;
+  border-top-style: solid;
+  border-top-width: 2px;
+  border-top-color: #D3D3D3;
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+  border-left-style: none;
+  border-left-width: 1px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 1px;
+  border-right-color: #D3D3D3;
+  vertical-align: middle;
+  text-align: left;
+}
+
+#vwnngttdae .gt_empty_group_heading {
+  padding: 0.5px;
+  color: #333333;
+  background-color: #FFFFFF;
+  font-size: 100%;
+  font-weight: initial;
+  border-top-style: solid;
+  border-top-width: 2px;
+  border-top-color: #D3D3D3;
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+  vertical-align: middle;
+}
+
+#vwnngttdae .gt_from_md > :first-child {
+  margin-top: 0;
+}
+
+#vwnngttdae .gt_from_md > :last-child {
+  margin-bottom: 0;
+}
+
+#vwnngttdae .gt_row {
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+  margin: 10px;
+  border-top-style: solid;
+  border-top-width: 1px;
+  border-top-color: #D3D3D3;
+  border-left-style: none;
+  border-left-width: 1px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 1px;
+  border-right-color: #D3D3D3;
+  vertical-align: middle;
+  overflow-x: hidden;
+}
+
+#vwnngttdae .gt_stub {
+  color: #333333;
+  background-color: #FFFFFF;
+  font-size: 100%;
+  font-weight: initial;
+  text-transform: inherit;
+  border-right-style: solid;
+  border-right-width: 2px;
+  border-right-color: #D3D3D3;
+  padding-left: 5px;
+  padding-right: 5px;
+}
+
+#vwnngttdae .gt_stub_row_group {
+  color: #333333;
+  background-color: #FFFFFF;
+  font-size: 100%;
+  font-weight: initial;
+  text-transform: inherit;
+  border-right-style: solid;
+  border-right-width: 2px;
+  border-right-color: #D3D3D3;
+  padding-left: 5px;
+  padding-right: 5px;
+  vertical-align: top;
+}
+
+#vwnngttdae .gt_row_group_first td {
+  border-top-width: 2px;
+}
+
+#vwnngttdae .gt_row_group_first th {
+  border-top-width: 2px;
+}
+
+#vwnngttdae .gt_summary_row {
+  color: #333333;
+  background-color: #FFFFFF;
+  text-transform: inherit;
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+}
+
+#vwnngttdae .gt_first_summary_row {
+  border-top-style: solid;
+  border-top-color: #D3D3D3;
+}
+
+#vwnngttdae .gt_first_summary_row.thick {
+  border-top-width: 2px;
+}
+
+#vwnngttdae .gt_last_summary_row {
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+}
+
+#vwnngttdae .gt_grand_summary_row {
+  color: #333333;
+  background-color: #FFFFFF;
+  text-transform: inherit;
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+}
+
+#vwnngttdae .gt_first_grand_summary_row {
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+  border-top-style: double;
+  border-top-width: 6px;
+  border-top-color: #D3D3D3;
+}
+
+#vwnngttdae .gt_last_grand_summary_row_top {
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+  border-bottom-style: double;
+  border-bottom-width: 6px;
+  border-bottom-color: #D3D3D3;
+}
+
+#vwnngttdae .gt_striped {
+  background-color: rgba(128, 128, 128, 0.05);
+}
+
+#vwnngttdae .gt_table_body {
+  border-top-style: solid;
+  border-top-width: 2px;
+  border-top-color: #D3D3D3;
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+}
+
+#vwnngttdae .gt_footnotes {
+  color: #333333;
+  background-color: #FFFFFF;
+  border-bottom-style: none;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+  border-left-style: none;
+  border-left-width: 2px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 2px;
+  border-right-color: #D3D3D3;
+}
+
+#vwnngttdae .gt_footnote {
+  margin: 0px;
+  font-size: 90%;
+  padding-top: 4px;
+  padding-bottom: 4px;
+  padding-left: 5px;
+  padding-right: 5px;
+}
+
+#vwnngttdae .gt_sourcenotes {
+  color: #333333;
+  background-color: #FFFFFF;
+  border-bottom-style: none;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+  border-left-style: none;
+  border-left-width: 2px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 2px;
+  border-right-color: #D3D3D3;
+}
+
+#vwnngttdae .gt_sourcenote {
+  font-size: 90%;
+  padding-top: 4px;
+  padding-bottom: 4px;
+  padding-left: 5px;
+  padding-right: 5px;
+}
+
+#vwnngttdae .gt_left {
+  text-align: left;
+}
+
+#vwnngttdae .gt_center {
+  text-align: center;
+}
+
+#vwnngttdae .gt_right {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+#vwnngttdae .gt_font_normal {
+  font-weight: normal;
+}
+
+#vwnngttdae .gt_font_bold {
+  font-weight: bold;
+}
+
+#vwnngttdae .gt_font_italic {
+  font-style: italic;
+}
+
+#vwnngttdae .gt_super {
+  font-size: 65%;
+}
+
+#vwnngttdae .gt_footnote_marks {
+  font-size: 75%;
+  vertical-align: 0.4em;
+  position: initial;
+}
+
+#vwnngttdae .gt_asterisk {
+  font-size: 100%;
+  vertical-align: 0;
+}
+
+#vwnngttdae .gt_indent_1 {
+  text-indent: 5px;
+}
+
+#vwnngttdae .gt_indent_2 {
+  text-indent: 10px;
+}
+
+#vwnngttdae .gt_indent_3 {
+  text-indent: 15px;
+}
+
+#vwnngttdae .gt_indent_4 {
+  text-indent: 20px;
+}
+
+#vwnngttdae .gt_indent_5 {
+  text-indent: 25px;
+}
+
+#vwnngttdae .katex-display {
+  display: inline-flex !important;
+  margin-bottom: 0.75em !important;
+}
+
+#vwnngttdae div.Reactable > div.rt-table > div.rt-thead > div.rt-tr.rt-tr-group-header > div.rt-th-group:after {
+  height: 0px !important;
+}
+</style>
+
+<table class="gt_table caption-top table table-sm table-striped small" data-quarto-bootstrap="false">
+<thead>
+<tr class="gt_col_headings header">
+<th id="a.metric" class="gt_col_heading gt_columns_bottom_border gt_left" data-quarto-table-cell-role="th" scope="col"><strong>Metric</strong></th>
+<th id="a.estimator" class="gt_col_heading gt_columns_bottom_border gt_left" data-quarto-table-cell-role="th" scope="col"><strong>Estimator</strong></th>
+<th id="a.estimate" class="gt_col_heading gt_columns_bottom_border gt_right" data-quarto-table-cell-role="th" scope="col"><strong>Estimate</strong></th>
+</tr>
+</thead>
+<tbody class="gt_table_body">
+<tr class="odd">
+<td class="gt_row gt_left" headers=".metric">mae</td>
+<td class="gt_row gt_left" headers=".estimator">standard</td>
+<td class="gt_row gt_right" headers=".estimate">68.5%</td>
+</tr>
+<tr class="even">
+<td class="gt_row gt_left" headers=".metric">rmse</td>
+<td class="gt_row gt_left" headers=".estimator">standard</td>
+<td class="gt_row gt_right" headers=".estimate">92.2%</td>
+</tr>
+<tr class="odd">
+<td class="gt_row gt_left" headers=".metric">rsq</td>
+<td class="gt_row gt_left" headers=".estimator">standard</td>
+<td class="gt_row gt_right" headers=".estimate">15.7%</td>
+</tr>
+</tbody>
+</table>
+
+</div>
+</div>
+</div>
+<p>yap more about it</p>
+<hr>
+</section>
+<section id="machine-learning-model-2---extreme-gradient-boost" class="level1">
+<h1>Machine Learning Model 2 - Extreme Gradient Boost</h1>
+<p>Continuing on, the second model being utilized is an Extreme Gradient Boost regression model. As this model contains many non linear relationships; such as wind direction and fuel type- a more robust model is needed. The same predictors are being utilized for this model.</p>
+<div class="cell">
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="wildfire_initial_files/figure-html/unnamed-chunk-5-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+<p>As shown above, relative humidity is the most important feature. This is to be expected as dry material is more easily flammable and spreads faster. Both location and wind speed are important factors as well, location will get explored later in the map section and wind speed affects wildfires in multiple ways; adding oxygen to fires and it also creates wind desiccation which causes moisture to be sucked out of plants- creating a very negative fire environment (RHS, 2026)! C2 Fuel type is characterized as boreal spruce, or evergreen forests, as evergreen forests are prone to desiccation and produce a very flammable resin. The final point of interest is month 5, may- this is widely reported to be one of the most prominent fire activity months as temperature begins to rise and snow melts. Knowing these factors gives additional insight into how to spot the warning signs for a potential fire.</p>
+<p>This model is a modest improvement from the original linear regression, with an R^2 value 5% higher, and lower error.</p>
+<div class="cell">
+<div class="cell-output-display">
+<div id="pgszlpfuae" style="padding-left:0px;padding-right:0px;padding-top:10px;padding-bottom:10px;overflow-x:auto;overflow-y:auto;width:auto;height:auto;">
+<style>#pgszlpfuae table {
+  font-family: system-ui, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+#pgszlpfuae thead, #pgszlpfuae tbody, #pgszlpfuae tfoot, #pgszlpfuae tr, #pgszlpfuae td, #pgszlpfuae th {
+  border-style: none;
+}
+
+#pgszlpfuae p {
+  margin: 0;
+  padding: 0;
+}
+
+#pgszlpfuae .gt_table {
+  display: table;
+  border-collapse: collapse;
+  line-height: normal;
+  margin-left: auto;
+  margin-right: auto;
+  color: #333333;
+  font-size: 16px;
+  font-weight: normal;
+  font-style: normal;
+  background-color: #FFFFFF;
+  width: auto;
+  border-top-style: solid;
+  border-top-width: 2px;
+  border-top-color: #A8A8A8;
+  border-right-style: none;
+  border-right-width: 2px;
+  border-right-color: #D3D3D3;
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #A8A8A8;
+  border-left-style: none;
+  border-left-width: 2px;
+  border-left-color: #D3D3D3;
+}
+
+#pgszlpfuae .gt_caption {
+  padding-top: 4px;
+  padding-bottom: 4px;
+}
+
+#pgszlpfuae .gt_title {
+  color: #333333;
+  font-size: 125%;
+  font-weight: initial;
+  padding-top: 4px;
+  padding-bottom: 4px;
+  padding-left: 5px;
+  padding-right: 5px;
+  border-bottom-color: #FFFFFF;
+  border-bottom-width: 0;
+}
+
+#pgszlpfuae .gt_subtitle {
+  color: #333333;
+  font-size: 85%;
+  font-weight: initial;
+  padding-top: 3px;
+  padding-bottom: 5px;
+  padding-left: 5px;
+  padding-right: 5px;
+  border-top-color: #FFFFFF;
+  border-top-width: 0;
+}
+
+#pgszlpfuae .gt_heading {
+  background-color: #FFFFFF;
+  text-align: center;
+  border-bottom-color: #FFFFFF;
+  border-left-style: none;
+  border-left-width: 1px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 1px;
+  border-right-color: #D3D3D3;
+}
+
+#pgszlpfuae .gt_bottom_border {
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+}
+
+#pgszlpfuae .gt_col_headings {
+  border-top-style: solid;
+  border-top-width: 2px;
+  border-top-color: #D3D3D3;
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+  border-left-style: none;
+  border-left-width: 1px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 1px;
+  border-right-color: #D3D3D3;
+}
+
+#pgszlpfuae .gt_col_heading {
+  color: #333333;
+  background-color: #FFFFFF;
+  font-size: 100%;
+  font-weight: normal;
+  text-transform: inherit;
+  border-left-style: none;
+  border-left-width: 1px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 1px;
+  border-right-color: #D3D3D3;
+  vertical-align: bottom;
+  padding-top: 5px;
+  padding-bottom: 6px;
+  padding-left: 5px;
+  padding-right: 5px;
+  overflow-x: hidden;
+}
+
+#pgszlpfuae .gt_column_spanner_outer {
+  color: #333333;
+  background-color: #FFFFFF;
+  font-size: 100%;
+  font-weight: normal;
+  text-transform: inherit;
+  padding-top: 0;
+  padding-bottom: 0;
+  padding-left: 4px;
+  padding-right: 4px;
+}
+
+#pgszlpfuae .gt_column_spanner_outer:first-child {
+  padding-left: 0;
+}
+
+#pgszlpfuae .gt_column_spanner_outer:last-child {
+  padding-right: 0;
+}
+
+#pgszlpfuae .gt_column_spanner {
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+  vertical-align: bottom;
+  padding-top: 5px;
+  padding-bottom: 5px;
+  overflow-x: hidden;
+  display: inline-block;
+  width: 100%;
+}
+
+#pgszlpfuae .gt_spanner_row {
+  border-bottom-style: hidden;
+}
+
+#pgszlpfuae .gt_group_heading {
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+  color: #333333;
+  background-color: #FFFFFF;
+  font-size: 100%;
+  font-weight: initial;
+  text-transform: inherit;
+  border-top-style: solid;
+  border-top-width: 2px;
+  border-top-color: #D3D3D3;
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+  border-left-style: none;
+  border-left-width: 1px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 1px;
+  border-right-color: #D3D3D3;
+  vertical-align: middle;
+  text-align: left;
+}
+
+#pgszlpfuae .gt_empty_group_heading {
+  padding: 0.5px;
+  color: #333333;
+  background-color: #FFFFFF;
+  font-size: 100%;
+  font-weight: initial;
+  border-top-style: solid;
+  border-top-width: 2px;
+  border-top-color: #D3D3D3;
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+  vertical-align: middle;
+}
+
+#pgszlpfuae .gt_from_md > :first-child {
+  margin-top: 0;
+}
+
+#pgszlpfuae .gt_from_md > :last-child {
+  margin-bottom: 0;
+}
+
+#pgszlpfuae .gt_row {
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+  margin: 10px;
+  border-top-style: solid;
+  border-top-width: 1px;
+  border-top-color: #D3D3D3;
+  border-left-style: none;
+  border-left-width: 1px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 1px;
+  border-right-color: #D3D3D3;
+  vertical-align: middle;
+  overflow-x: hidden;
+}
+
+#pgszlpfuae .gt_stub {
+  color: #333333;
+  background-color: #FFFFFF;
+  font-size: 100%;
+  font-weight: initial;
+  text-transform: inherit;
+  border-right-style: solid;
+  border-right-width: 2px;
+  border-right-color: #D3D3D3;
+  padding-left: 5px;
+  padding-right: 5px;
+}
+
+#pgszlpfuae .gt_stub_row_group {
+  color: #333333;
+  background-color: #FFFFFF;
+  font-size: 100%;
+  font-weight: initial;
+  text-transform: inherit;
+  border-right-style: solid;
+  border-right-width: 2px;
+  border-right-color: #D3D3D3;
+  padding-left: 5px;
+  padding-right: 5px;
+  vertical-align: top;
+}
+
+#pgszlpfuae .gt_row_group_first td {
+  border-top-width: 2px;
+}
+
+#pgszlpfuae .gt_row_group_first th {
+  border-top-width: 2px;
+}
+
+#pgszlpfuae .gt_summary_row {
+  color: #333333;
+  background-color: #FFFFFF;
+  text-transform: inherit;
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+}
+
+#pgszlpfuae .gt_first_summary_row {
+  border-top-style: solid;
+  border-top-color: #D3D3D3;
+}
+
+#pgszlpfuae .gt_first_summary_row.thick {
+  border-top-width: 2px;
+}
+
+#pgszlpfuae .gt_last_summary_row {
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+}
+
+#pgszlpfuae .gt_grand_summary_row {
+  color: #333333;
+  background-color: #FFFFFF;
+  text-transform: inherit;
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+}
+
+#pgszlpfuae .gt_first_grand_summary_row {
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+  border-top-style: double;
+  border-top-width: 6px;
+  border-top-color: #D3D3D3;
+}
+
+#pgszlpfuae .gt_last_grand_summary_row_top {
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+  border-bottom-style: double;
+  border-bottom-width: 6px;
+  border-bottom-color: #D3D3D3;
+}
+
+#pgszlpfuae .gt_striped {
+  background-color: rgba(128, 128, 128, 0.05);
+}
+
+#pgszlpfuae .gt_table_body {
+  border-top-style: solid;
+  border-top-width: 2px;
+  border-top-color: #D3D3D3;
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+}
+
+#pgszlpfuae .gt_footnotes {
+  color: #333333;
+  background-color: #FFFFFF;
+  border-bottom-style: none;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+  border-left-style: none;
+  border-left-width: 2px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 2px;
+  border-right-color: #D3D3D3;
+}
+
+#pgszlpfuae .gt_footnote {
+  margin: 0px;
+  font-size: 90%;
+  padding-top: 4px;
+  padding-bottom: 4px;
+  padding-left: 5px;
+  padding-right: 5px;
+}
+
+#pgszlpfuae .gt_sourcenotes {
+  color: #333333;
+  background-color: #FFFFFF;
+  border-bottom-style: none;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+  border-left-style: none;
+  border-left-width: 2px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 2px;
+  border-right-color: #D3D3D3;
+}
+
+#pgszlpfuae .gt_sourcenote {
+  font-size: 90%;
+  padding-top: 4px;
+  padding-bottom: 4px;
+  padding-left: 5px;
+  padding-right: 5px;
+}
+
+#pgszlpfuae .gt_left {
+  text-align: left;
+}
+
+#pgszlpfuae .gt_center {
+  text-align: center;
+}
+
+#pgszlpfuae .gt_right {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+#pgszlpfuae .gt_font_normal {
+  font-weight: normal;
+}
+
+#pgszlpfuae .gt_font_bold {
+  font-weight: bold;
+}
+
+#pgszlpfuae .gt_font_italic {
+  font-style: italic;
+}
+
+#pgszlpfuae .gt_super {
+  font-size: 65%;
+}
+
+#pgszlpfuae .gt_footnote_marks {
+  font-size: 75%;
+  vertical-align: 0.4em;
+  position: initial;
+}
+
+#pgszlpfuae .gt_asterisk {
+  font-size: 100%;
+  vertical-align: 0;
+}
+
+#pgszlpfuae .gt_indent_1 {
+  text-indent: 5px;
+}
+
+#pgszlpfuae .gt_indent_2 {
+  text-indent: 10px;
+}
+
+#pgszlpfuae .gt_indent_3 {
+  text-indent: 15px;
+}
+
+#pgszlpfuae .gt_indent_4 {
+  text-indent: 20px;
+}
+
+#pgszlpfuae .gt_indent_5 {
+  text-indent: 25px;
+}
+
+#pgszlpfuae .katex-display {
+  display: inline-flex !important;
+  margin-bottom: 0.75em !important;
+}
+
+#pgszlpfuae div.Reactable > div.rt-table > div.rt-thead > div.rt-tr.rt-tr-group-header > div.rt-th-group:after {
+  height: 0px !important;
+}
+</style>
+
+<table class="gt_table caption-top table table-sm table-striped small" data-quarto-bootstrap="false">
+<thead>
+<tr class="gt_col_headings header">
+<th id="a.metric" class="gt_col_heading gt_columns_bottom_border gt_left" data-quarto-table-cell-role="th" scope="col"><strong>Metric</strong></th>
+<th id="a.estimator" class="gt_col_heading gt_columns_bottom_border gt_left" data-quarto-table-cell-role="th" scope="col"><strong>Estimator</strong></th>
+<th id="a.estimate" class="gt_col_heading gt_columns_bottom_border gt_right" data-quarto-table-cell-role="th" scope="col"><strong>Estimate</strong></th>
+</tr>
+</thead>
+<tbody class="gt_table_body">
+<tr class="odd">
+<td class="gt_row gt_left" headers=".metric">mae</td>
+<td class="gt_row gt_left" headers=".estimator">standard</td>
+<td class="gt_row gt_right" headers=".estimate">65.7%</td>
+</tr>
+<tr class="even">
+<td class="gt_row gt_left" headers=".metric">rmse</td>
+<td class="gt_row gt_left" headers=".estimator">standard</td>
+<td class="gt_row gt_right" headers=".estimate">90.7%</td>
+</tr>
+<tr class="odd">
+<td class="gt_row gt_left" headers=".metric">rsq</td>
+<td class="gt_row gt_left" headers=".estimator">standard</td>
+<td class="gt_row gt_right" headers=".estimate">19.4%</td>
+</tr>
+</tbody>
+</table>
+
+</div>
+</div>
+</div>
+<p>Knowing these factors gives additional insight into how to spot the warning signs for a potential fire.</p>
+</section>
+<section id="machine-learning-model-3---decision-tree" class="level1">
+<h1>Machine Learning Model 3 - Decision Tree</h1>
+<p>The final model in this report is a decision tree, this “branches” off of the previous model and utilize the factors below.</p>
+<p>The reasoning for using these indicators is to create a model which can be used regardless of the time of year, and provides general insights for non-seasonal trends, as well as creates an easy to read visualization. The tree diagram is illustrated below.</p>
+<div class="cell">
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="wildfire_initial_files/figure-html/unnamed-chunk-8-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+<p>This model rates fuel type as the most divisive factor, a majority of the Coniferous fuel types are clustered- which helps support this model as research indicates coniferous fuel types are significantly more flammable due to the resin they produce. The proceeding factor both appear in the same order in the Extreme Gradient Boost model, which indicates an importance.</p>
+</section>
+<section id="machine-learning-conclusion" class="level1">
+<h1>Machine Learning Conclusion</h1>
+<p>While there are large gaps in the model such as nearly 80% of variance being unexplained, these three models combined may prove useful as a basis for flagging dangerous conditions. To summarize, there are three red flag factors to pay attention to; Coniferous fuels, high winds, and low moisture. Areas that have these conditions should be on high alert, and ready to respond to any wildfires.</p>
+<hr>
+</section>
+<section id="does-wildfire-response-have-a-bias" class="level1">
+<h1>Does wildfire response have a bias?</h1>
+<p>It is an unfortunate reality that some groups of people are treated worse by the governing organization, as the impact of wildfires can be life altering- potential biases and inconsistencies should be noted and adjusted. The table below showcases what appears to be bias.</p>
+<div class="cell">
+<div class="cell-output-display">
+<div id="vodrmajjfj" style="padding-left:0px;padding-right:0px;padding-top:10px;padding-bottom:10px;overflow-x:auto;overflow-y:auto;width:auto;height:auto;">
+<style>#vodrmajjfj table {
+  font-family: system-ui, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+#vodrmajjfj thead, #vodrmajjfj tbody, #vodrmajjfj tfoot, #vodrmajjfj tr, #vodrmajjfj td, #vodrmajjfj th {
+  border-style: none;
+}
+
+#vodrmajjfj p {
+  margin: 0;
+  padding: 0;
+}
+
+#vodrmajjfj .gt_table {
+  display: table;
+  border-collapse: collapse;
+  line-height: normal;
+  margin-left: auto;
+  margin-right: auto;
+  color: #333333;
+  font-size: 16px;
+  font-weight: normal;
+  font-style: normal;
+  background-color: #FFFFFF;
+  width: auto;
+  border-top-style: solid;
+  border-top-width: 2px;
+  border-top-color: #A8A8A8;
+  border-right-style: none;
+  border-right-width: 2px;
+  border-right-color: #D3D3D3;
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #A8A8A8;
+  border-left-style: none;
+  border-left-width: 2px;
+  border-left-color: #D3D3D3;
+}
+
+#vodrmajjfj .gt_caption {
+  padding-top: 4px;
+  padding-bottom: 4px;
+}
+
+#vodrmajjfj .gt_title {
+  color: #333333;
+  font-size: 125%;
+  font-weight: initial;
+  padding-top: 4px;
+  padding-bottom: 4px;
+  padding-left: 5px;
+  padding-right: 5px;
+  border-bottom-color: #FFFFFF;
+  border-bottom-width: 0;
+}
+
+#vodrmajjfj .gt_subtitle {
+  color: #333333;
+  font-size: 85%;
+  font-weight: initial;
+  padding-top: 3px;
+  padding-bottom: 5px;
+  padding-left: 5px;
+  padding-right: 5px;
+  border-top-color: #FFFFFF;
+  border-top-width: 0;
+}
+
+#vodrmajjfj .gt_heading {
+  background-color: #FFFFFF;
+  text-align: center;
+  border-bottom-color: #FFFFFF;
+  border-left-style: none;
+  border-left-width: 1px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 1px;
+  border-right-color: #D3D3D3;
+}
+
+#vodrmajjfj .gt_bottom_border {
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+}
+
+#vodrmajjfj .gt_col_headings {
+  border-top-style: solid;
+  border-top-width: 2px;
+  border-top-color: #D3D3D3;
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+  border-left-style: none;
+  border-left-width: 1px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 1px;
+  border-right-color: #D3D3D3;
+}
+
+#vodrmajjfj .gt_col_heading {
+  color: #333333;
+  background-color: #FFFFFF;
+  font-size: 100%;
+  font-weight: normal;
+  text-transform: inherit;
+  border-left-style: none;
+  border-left-width: 1px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 1px;
+  border-right-color: #D3D3D3;
+  vertical-align: bottom;
+  padding-top: 5px;
+  padding-bottom: 6px;
+  padding-left: 5px;
+  padding-right: 5px;
+  overflow-x: hidden;
+}
+
+#vodrmajjfj .gt_column_spanner_outer {
+  color: #333333;
+  background-color: #FFFFFF;
+  font-size: 100%;
+  font-weight: normal;
+  text-transform: inherit;
+  padding-top: 0;
+  padding-bottom: 0;
+  padding-left: 4px;
+  padding-right: 4px;
+}
+
+#vodrmajjfj .gt_column_spanner_outer:first-child {
+  padding-left: 0;
+}
+
+#vodrmajjfj .gt_column_spanner_outer:last-child {
+  padding-right: 0;
+}
+
+#vodrmajjfj .gt_column_spanner {
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+  vertical-align: bottom;
+  padding-top: 5px;
+  padding-bottom: 5px;
+  overflow-x: hidden;
+  display: inline-block;
+  width: 100%;
+}
+
+#vodrmajjfj .gt_spanner_row {
+  border-bottom-style: hidden;
+}
+
+#vodrmajjfj .gt_group_heading {
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+  color: #333333;
+  background-color: #FFFFFF;
+  font-size: 100%;
+  font-weight: initial;
+  text-transform: inherit;
+  border-top-style: solid;
+  border-top-width: 2px;
+  border-top-color: #D3D3D3;
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+  border-left-style: none;
+  border-left-width: 1px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 1px;
+  border-right-color: #D3D3D3;
+  vertical-align: middle;
+  text-align: left;
+}
+
+#vodrmajjfj .gt_empty_group_heading {
+  padding: 0.5px;
+  color: #333333;
+  background-color: #FFFFFF;
+  font-size: 100%;
+  font-weight: initial;
+  border-top-style: solid;
+  border-top-width: 2px;
+  border-top-color: #D3D3D3;
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+  vertical-align: middle;
+}
+
+#vodrmajjfj .gt_from_md > :first-child {
+  margin-top: 0;
+}
+
+#vodrmajjfj .gt_from_md > :last-child {
+  margin-bottom: 0;
+}
+
+#vodrmajjfj .gt_row {
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+  margin: 10px;
+  border-top-style: solid;
+  border-top-width: 1px;
+  border-top-color: #D3D3D3;
+  border-left-style: none;
+  border-left-width: 1px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 1px;
+  border-right-color: #D3D3D3;
+  vertical-align: middle;
+  overflow-x: hidden;
+}
+
+#vodrmajjfj .gt_stub {
+  color: #333333;
+  background-color: #FFFFFF;
+  font-size: 100%;
+  font-weight: initial;
+  text-transform: inherit;
+  border-right-style: solid;
+  border-right-width: 2px;
+  border-right-color: #D3D3D3;
+  padding-left: 5px;
+  padding-right: 5px;
+}
+
+#vodrmajjfj .gt_stub_row_group {
+  color: #333333;
+  background-color: #FFFFFF;
+  font-size: 100%;
+  font-weight: initial;
+  text-transform: inherit;
+  border-right-style: solid;
+  border-right-width: 2px;
+  border-right-color: #D3D3D3;
+  padding-left: 5px;
+  padding-right: 5px;
+  vertical-align: top;
+}
+
+#vodrmajjfj .gt_row_group_first td {
+  border-top-width: 2px;
+}
+
+#vodrmajjfj .gt_row_group_first th {
+  border-top-width: 2px;
+}
+
+#vodrmajjfj .gt_summary_row {
+  color: #333333;
+  background-color: #FFFFFF;
+  text-transform: inherit;
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+}
+
+#vodrmajjfj .gt_first_summary_row {
+  border-top-style: solid;
+  border-top-color: #D3D3D3;
+}
+
+#vodrmajjfj .gt_first_summary_row.thick {
+  border-top-width: 2px;
+}
+
+#vodrmajjfj .gt_last_summary_row {
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+}
+
+#vodrmajjfj .gt_grand_summary_row {
+  color: #333333;
+  background-color: #FFFFFF;
+  text-transform: inherit;
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+}
+
+#vodrmajjfj .gt_first_grand_summary_row {
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+  border-top-style: double;
+  border-top-width: 6px;
+  border-top-color: #D3D3D3;
+}
+
+#vodrmajjfj .gt_last_grand_summary_row_top {
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+  border-bottom-style: double;
+  border-bottom-width: 6px;
+  border-bottom-color: #D3D3D3;
+}
+
+#vodrmajjfj .gt_striped {
+  background-color: rgba(128, 128, 128, 0.05);
+}
+
+#vodrmajjfj .gt_table_body {
+  border-top-style: solid;
+  border-top-width: 2px;
+  border-top-color: #D3D3D3;
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+}
+
+#vodrmajjfj .gt_footnotes {
+  color: #333333;
+  background-color: #FFFFFF;
+  border-bottom-style: none;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+  border-left-style: none;
+  border-left-width: 2px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 2px;
+  border-right-color: #D3D3D3;
+}
+
+#vodrmajjfj .gt_footnote {
+  margin: 0px;
+  font-size: 90%;
+  padding-top: 4px;
+  padding-bottom: 4px;
+  padding-left: 5px;
+  padding-right: 5px;
+}
+
+#vodrmajjfj .gt_sourcenotes {
+  color: #333333;
+  background-color: #FFFFFF;
+  border-bottom-style: none;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+  border-left-style: none;
+  border-left-width: 2px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 2px;
+  border-right-color: #D3D3D3;
+}
+
+#vodrmajjfj .gt_sourcenote {
+  font-size: 90%;
+  padding-top: 4px;
+  padding-bottom: 4px;
+  padding-left: 5px;
+  padding-right: 5px;
+}
+
+#vodrmajjfj .gt_left {
+  text-align: left;
+}
+
+#vodrmajjfj .gt_center {
+  text-align: center;
+}
+
+#vodrmajjfj .gt_right {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+#vodrmajjfj .gt_font_normal {
+  font-weight: normal;
+}
+
+#vodrmajjfj .gt_font_bold {
+  font-weight: bold;
+}
+
+#vodrmajjfj .gt_font_italic {
+  font-style: italic;
+}
+
+#vodrmajjfj .gt_super {
+  font-size: 65%;
+}
+
+#vodrmajjfj .gt_footnote_marks {
+  font-size: 75%;
+  vertical-align: 0.4em;
+  position: initial;
+}
+
+#vodrmajjfj .gt_asterisk {
+  font-size: 100%;
+  vertical-align: 0;
+}
+
+#vodrmajjfj .gt_indent_1 {
+  text-indent: 5px;
+}
+
+#vodrmajjfj .gt_indent_2 {
+  text-indent: 10px;
+}
+
+#vodrmajjfj .gt_indent_3 {
+  text-indent: 15px;
+}
+
+#vodrmajjfj .gt_indent_4 {
+  text-indent: 20px;
+}
+
+#vodrmajjfj .gt_indent_5 {
+  text-indent: 25px;
+}
+
+#vodrmajjfj .katex-display {
+  display: inline-flex !important;
+  margin-bottom: 0.75em !important;
+}
+
+#vodrmajjfj div.Reactable > div.rt-table > div.rt-thead > div.rt-tr.rt-tr-group-header > div.rt-th-group:after {
+  height: 0px !important;
+}
+</style>
+
+<table class="gt_table caption-top table table-sm table-striped small" data-quarto-bootstrap="false">
+<thead>
+<tr class="gt_heading header">
+<td colspan="6" class="gt_heading gt_title gt_font_normal">Fire Proximaty Statistics</td>
+</tr>
+<tr class="gt_heading even">
+<td colspan="6" class="gt_heading gt_subtitle gt_font_normal gt_bottom_border">Distance in Meters</td>
+</tr>
+<tr class="gt_col_headings header">
+<th id="a::stub" class="gt_col_heading gt_columns_bottom_border gt_left" data-quarto-table-cell-role="th" scope="col"></th>
+<th id="Mean-Distance" class="gt_col_heading gt_columns_bottom_border gt_right" data-quarto-table-cell-role="th" scope="col">Mean Distance</th>
+<th id="Sd-Distance" class="gt_col_heading gt_columns_bottom_border gt_right" data-quarto-table-cell-role="th" scope="col">Sd Distance</th>
+<th id="Closest-Distance" class="gt_col_heading gt_columns_bottom_border gt_right" data-quarto-table-cell-role="th" scope="col">Closest Distance</th>
+<th id="Furthest-Distance" class="gt_col_heading gt_columns_bottom_border gt_right" data-quarto-table-cell-role="th" scope="col">Furthest Distance</th>
+<th id="Median-Distance" class="gt_col_heading gt_columns_bottom_border gt_right" data-quarto-table-cell-role="th" scope="col">Median Distance</th>
+</tr>
+</thead>
+<tbody class="gt_table_body">
+<tr class="gt_row_group_first odd">
+<td class="gt_row gt_left gt_stub_row_group" headers="Top Income Municipalities stub_2_1 stub_1">Top Income Municipalities</td>
+<td class="gt_row gt_right" headers="Top Income Municipalities stub_2_1 Mean Distance" style="background-color: #8B0000; color: #FFFFFF">149.39</td>
+<td class="gt_row gt_right" headers="Top Income Municipalities stub_2_1 Sd Distance" style="background-color: #8B0000; color: #FFFFFF">60.33</td>
+<td class="gt_row gt_right" headers="Top Income Municipalities stub_2_1 Closest Distance" style="background-color: #911501; color: #FFFFFF">1.34</td>
+<td class="gt_row gt_right" headers="Top Income Municipalities stub_2_1 Furthest Distance" style="background-color: #8B0000; color: #FFFFFF">276.15</td>
+<td class="gt_row gt_right" headers="Top Income Municipalities stub_2_1 Median Distance" style="background-color: #9A2702; color: #FFFFFF">155.35</td>
+</tr>
+<tr class="gt_row_group_first even">
+<td class="gt_row gt_left gt_stub_row_group" headers="Bottom Income Municipalities stub_2_2 stub_1">Bottom Income Municipalities</td>
+<td class="gt_row gt_right" headers="Bottom Income Municipalities stub_2_2 Mean Distance" style="background-color: #901101; color: #FFFFFF">159.62</td>
+<td class="gt_row gt_right" headers="Bottom Income Municipalities stub_2_2 Sd Distance" style="background-color: #B65301; color: #FFFFFF">108.13</td>
+<td class="gt_row gt_right" headers="Bottom Income Municipalities stub_2_2 Closest Distance" style="background-color: #8B0000; color: #FFFFFF">0.34</td>
+<td class="gt_row gt_right" headers="Bottom Income Municipalities stub_2_2 Furthest Distance" style="background-color: #B14C01; color: #FFFFFF">463.54</td>
+<td class="gt_row gt_right" headers="Bottom Income Municipalities stub_2_2 Median Distance" style="background-color: #901301; color: #FFFFFF">135.51</td>
+</tr>
+<tr class="gt_row_group_first odd">
+<td class="gt_row gt_left gt_stub_row_group" headers="Highest First Nations Population stub_2_3 stub_1">Highest First Nations Population</td>
+<td class="gt_row gt_right" headers="Highest First Nations Population stub_2_3 Mean Distance" style="background-color: #8B0100; color: #FFFFFF">149.86</td>
+<td class="gt_row gt_right" headers="Highest First Nations Population stub_2_3 Sd Distance" style="background-color: #AF4902; color: #FFFFFF">100.08</td>
+<td class="gt_row gt_right" headers="Highest First Nations Population stub_2_3 Closest Distance" style="background-color: #8D0600; color: #FFFFFF">0.59</td>
+<td class="gt_row gt_right" headers="Highest First Nations Population stub_2_3 Furthest Distance" style="background-color: #C56901; color: #FFFFFF">565.91</td>
+<td class="gt_row gt_right" headers="Highest First Nations Population stub_2_3 Median Distance" style="background-color: #8B0000; color: #FFFFFF">123.88</td>
+</tr>
+<tr class="gt_row_group_first even">
+<td class="gt_row gt_left gt_stub_row_group" headers="Lowest First Nations Population stub_2_4 stub_1">Lowest First Nations Population</td>
+<td class="gt_row gt_right" headers="Lowest First Nations Population stub_2_4 Mean Distance" style="background-color: #FFBF00; color: #000000">405.06</td>
+<td class="gt_row gt_right" headers="Lowest First Nations Population stub_2_4 Sd Distance" style="background-color: #FFBF00; color: #000000">193.21</td>
+<td class="gt_row gt_right" headers="Lowest First Nations Population stub_2_4 Closest Distance" style="background-color: #FFBF00; color: #000000">19.55</td>
+<td class="gt_row gt_right" headers="Lowest First Nations Population stub_2_4 Furthest Distance" style="background-color: #FFBF00; color: #000000">866.88</td>
+<td class="gt_row gt_right" headers="Lowest First Nations Population stub_2_4 Median Distance" style="background-color: #FFBF00; color: #000000">380.51</td>
+</tr>
+</tbody><tfoot>
+<tr class="gt_footnotes odd">
+<td colspan="6" class="gt_footnote">We see that lower income and higher first nations populations are closest to wildfires.</td>
+</tr>
+</tfoot>
+
+</table>
+
+</div>
+</div>
+</div>
+<p>The analysis of this graph indicates that municipalities that are low income or primarily first nations are the most impacted by wildfires. However this graph alone doesn’t prove bias or poor governance. Shown below are the both plots for income level, and first nations population.</p>
+<div class="cell">
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="wildfire_initial_files/figure-html/unnamed-chunk-13-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+<hr>
+<div class="cell">
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="wildfire_initial_files/figure-html/unnamed-chunk-14-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+<hr>
+</section>
+<section id="interactive-map" class="level1">
+<h1>Interactive Map</h1>
+<p>When the data of the previous graphs gets inputted onto a map, the story becomes much more clear.</p>
+<div class="cell">
+<div class="cell-output-display">
+<div class="leaflet html-widget html-fill-item" id="htmlwidget-9c787b2558ae965854c5" style="width:100%;height:464px;"></div>
+<script type="application/json" data-for="htmlwidget-9c787b2558ae965854c5">{"x":{"options":{"crs":{"crsClass":"L.CRS.EPSG3857","code":null,"proj4def":null,"projectedBounds":null,"options":{}}},"calls":[{"method":"addTiles","args":["https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",null,null,{"minZoom":0,"maxZoom":18,"tileSize":256,"subdomains":"abc","errorTileUrl":"","tms":false,"noWrap":false,"zoomOffset":0,"zoomReverse":false,"opacity":1,"zIndex":1,"detectRetina":false,"attribution":"&copy; <a href=\"https://openstreetmap.org/copyright/\">OpenStreetMap<\/a>,  <a href=\"https://opendatacommons.org/licenses/odbl/\">ODbL<\/a>"}]},{"method":"addMarkers","args":[53.63,-113.32,null,null,null,{"interactive":true,"draggable":false,"keyboard":true,"title":"","alt":"","zIndexOffset":0,"opacity":1,"riseOnHover":false,"riseOffset":250},null,null,null,null,null,{"interactive":false,"permanent":false,"direction":"auto","opacity":1,"offset":[0,0],"textsize":"10px","textOnly":false,"className":"","sticky":true},null]},{"method":"addCircles","args":[[53.561129,57.396667,56.442783,57.980433,58.274283,58.3699,57.813,59.441833,56.267833,57.6345,53.791567,59.429333,58.10135,56.9925,56.948567,59.476117,55.546783,57.702517,57.041667,56.273,56.468167,54.551098,56.982833,59.754667,57.247343,59.570667,57.603559,56.585383,58.434783,58.276833,55.22565,59.945883,59.6651,56.056433,55.199727,55.043,57.303967,59.579967,57.1977,54.203,59.258667,59.3408,59.604683,57.8936,59.289867,59.356333,59.1324,59.306063,59.895517,59.245883,57.151217,58.87405,59.518182,59.354883,59.655133,57.264667,54.6599,51.988983,54.807133,57.54835,58.241483,59.271083,53.485417,55.476183,57.8403,57.916833,58.52995,58.190767,58.462933,59.243467,57.778733,55.675535,57.941217,56.0438,59.293383,58.049183,57.387067,59.6531,59.1426,59.229717,56.609767,57.736167,57.6969,59.826867,59.7917,56.982,57.006633,59.069167,56.670117,56.7831,55.492667,59.820917,55.459333,58.180117,57.36025,59.15325,59.5909,56.960433,59.269083,57.035417,58.86975,55.716367,56.402597,57.087417,58.647883,59.367667,59.606867,58.287567,58.86,57.42035,57.564867,57.151889,57.0999,59.71005,56.451883,59.86815,59.817133,59.418367,59.031033,59.874367,56.990917,52.905417,57.693917,56.386752,58.86705,59.453166,54.86785,57.981817,53.145183,57.712283,57.976283,55.628167,55.655002,55.034283,53.836833,57.647957,53.935583,55.157413,55.877833,55.067095,56.281817,55.956383,52.82095,59.42901,52.815117,54.388929,59.225,57.4876,54.520083,58.158117,57.089567,57.1762,55.179817,59.054108,58.16715,58.435917,59.860083,57.801371,56.301,52.808677,57.4354,54.735667,54.95775,54.896,59.230787,59.684617,57.14915,56.707233,58.4906,57.681583,59.26365,57.014333,59.082975,57.576287,56.950667,57.8415,57.692833,59.7624,57.421667,52.193833,56.859183,59.955033,57.420957,56.987717,56.246653,59.1433,57.617183,58.7445,56.57595,57.363,57.147283,55.140417,54.81143,59.171467,55.9266,56.99765,56.789033,58.839855,55.8328,55.19305,58.536167,55.6763,56.705567,59.1492,56.633533,52.477,56.319617,56.69245,57.308,57.119883,57.420333,59.56795,57.306767,55.573467,54.772283,55.568667,59.969783,59.65645,59.051433,58.93548,59.317167,56.398693],[-119.636335,-112.6755,-112.08535,-119.745933,-111.26715,-110.773217,-110.167667,-114.235667,-113.191333,-112.666333,-119.743,-110.288333,-110.249333,-111.898667,-113.9832,-119.2281,-113.386383,-119.768167,-110.048333,-111.565,-111.738333,-114.984807,-114.733333,-110.617,-113.571622,-116.209967,-111.301272,-115.4113,-110.006883,-110.366767,-114.651217,-110.41335,-115.954417,-115.255383,-114.901457,-115.408833,-110.594467,-110.065717,-111.632617,-116.797333,-110.395333,-119.653279,-119.85805,-114.024467,-117.415633,-118.954594,-114.195667,-114.0784,-118.760133,-110.696367,-119.15395,-114.3802,-117.098242,-115.45695,-119.924867,-115.757833,-119.9646,-116.656067,-110.364883,-116.1527,-114.629283,-114.25625,-119.225817,-112.027267,-112.5289,-116.023867,-118.0047,-118.35585,-118.18735,-117.982,-116.3263,-114.616475,-114.616117,-110.21215,-118.094617,-115.84555,-113.717133,-110.343233,-115.1524,-119.975783,-112.142083,-112.923833,-114.14,-117.74615,-118.5111,-114.200167,-110.534333,-119.945833,-111.464233,-110.581317,-113.165917,-118.039767,-112.801317,-114.49135,-113.267667,-114.068567,-119.2651,-113.099793,-119.4795,-118.153217,-116.517967,-114.40635,-114.363598,-117.928833,-110.31355,-110.925533,-117.434033,-117.279655,-114.793333,-110.35745,-110.303767,-113.221668,-110.594483,-119.76675,-110.07845,-118.298637,-111.118583,-110.812683,-111.156367,-110.29775,-113.459433,-115.695967,-113.29625,-116.809335,-111.145817,-114.158713,-116.6625,-119.972633,-115.686783,-110.6469,-113.214917,-110.361883,-119.485325,-115.14815,-115.783333,-117.89074,-117.776167,-117.330653,-116.407667,-117.39005,-119.161628,-115.056367,-115.908167,-119.944779,-115.450383,-116.371578,-114.4041,-113.4992,-117.356783,-114.182933,-113.988133,-113.801217,-114.115967,-114.359425,-118.41965,-114.553883,-115.8038,-114.761348,-112.124667,-116.203747,-115.051567,-119.032783,-115.681083,-116.100217,-118.907882,-119.684367,-110.083083,-118.9744,-119.4031,-114.87945,-110.172867,-110.900667,-118.870537,-114.860579,-119.776167,-113.262833,-116.019833,-111.149033,-113.400667,-116.105,-119.659367,-116.247333,-113.759147,-116.508267,-110.22314,-119.868067,-117.858983,-114.203683,-111.793967,-110.788283,-112.921917,-111.20545,-115.410318,-114.93385,-119.33885,-114.46,-113.837633,-114.677611,-110.326583,-110.688133,-118.862633,-115.173467,-114.336167,-111.2072,-112.89505,-116.521333,-115.10495,-115.03745,-115.7485,-114.141967,-117.639367,-119.283083,-114.654633,-114.172283,-110.2109,-110.164017,-111.321783,-119.619233,-115.095723,-118.305718,-111.085383,-110.189203],[4479.251529833519,4416.241016223616,4854.572996762096,4334.721319438823,3296.881367533924,14164.63704706757,5267.373437486306,4689.159472710387,3229.048093843863,5912.910951770446,6808.17698692905,7614.100228719978,4371.30189471936,7166.246963467089,3974.677008870125,5259.734681255078,4720.533814140712,3265.872558272747,5862.251040440566,6053.398266531652,4763.01435358787,3723.312681583534,4035.274400885999,6078.048630871232,10263.3011413712,3405.783765497281,42891.01876204224,7459.636609376427,3499.362999357724,8647.797112817727,3557.310585080549,7985.735690735888,5684.653606351386,16708.383036496,7140.804072550077,4167.435173289067,3306.527032871239,10937.1394390069,5313.81446832891,3663.297042682989,5049.121762569051,13904.0043721087,6183.422464606165,9368.261909777666,3546.775695528955,20704.39505328018,3143.591195606633,3502.501380951459,3687.213229699889,6921.534751202359,6367.713145285122,8649.767126205168,12287.3893201824,5299.651472737059,3413.769420457532,3662.079740458652,3645.545226711637,5345.395065628294,10094.61608409901,3502.546844069963,4418.043490081868,5288.643041738584,6195.411287324538,6015.876023590428,5353.729576861872,6390.304160299922,9488.511323371964,6167.977711096724,4737.770041712964,3485.867737787869,7144.749976682135,5613.620832716009,11666.45662534614,6997.63381300363,7835.896495318855,3976.123003646566,6865.402971551156,8825.628575077411,5692.687229954688,6947.253501218383,3722.457239255969,14715.99502426323,3256.399872157677,5338.449642544852,3449.637662132068,5174.348785143738,5927.615389329983,3348.780555693532,39306.22874093106,6079.096479966316,4816.042723639769,6566.417165768898,3843.432648335729,3988.039442975221,7362.973298619135,4628.903929912208,3732.666948412448,4001.114494419302,3172.031437342708,3565.582111826671,3619.964105814937,26639.68114420606,13658.58727575538,13256.29282126256,9397.333271277814,4548.255072423011,14349.93730428613,32652.02561970794,5396.330435175842,3545.877663942076,9445.013512683669,4356.706522104194,3630.505921825172,5141.315105992657,4579.516843761249,4586.188070621209,3594.891988313878,10283.72965131821,11345.43175273867,3723.911374290059,10273.02447418158,6911.635163761371,6854.493156544911,4418.331817660984,18308.31143267788,11979.41440249696,5341.521050577069,9365.830972685617,25358.13541739877,9527.700145559487,13759.07343940093,3909.811274706447,4783.197768409722,7298.896173416804,7915.155180327321,4086.251611110036,6200.832078950178,3502.046717305622,21343.3412698319,4177.02618745689,12538.17101829754,11834.98538152421,6459.082382423213,4206.076889756982,13752.47516807093,14545.85326248543,16171.53274546292,4797.278952731274,13229.46431699522,6798.510515026797,6503.796049794677,5829.313143050837,3886.117706403844,3178.951475577511,27302.3295242774,17593.63485073924,11644.82334894031,7121.511326037401,7563.413444334265,4025.792638652263,5247.990212822939,7755.006601450125,19845.74269672751,11371.82796816675,4322.213398528626,6197.929590612584,5184.5188464109,6146.564469447145,25427.67938646568,6566.489915389895,10111.14350258843,7674.921937817502,3203.053877181492,3894.5904014292,5218.170116339378,3275.560923423242,9794.545472818445,20410.20414207117,6955.500046130382,4710.06511375333,7510.926223765848,6736.628652753211,9983.629913114679,12904.58615954206,3675.101281155608,10694.6620413337,3206.780237316842,4177.73900390072,7698.113756889588,18805.54702012453,9107.451278475713,4507.954752540825,7325.89856665496,10628.3630870811,4166.411032497843,15415.78725901751,21008.11186973285,18394.99378032904,3257.680781849738,14718.48354830699,12913.08525104039,6601.486032280527,6279.883969880274,10264.02101461874,8942.892064166803,3591.834334340926,16769.51282862905,7559.951470878515,4863.421248672401,5500.43426195275,8208.66405726873,13200.42703420425,4096.370927671232,5100.580708789831,3773.440539240643,4209.104478336709,6654.30754603343,4707.359734372317,12872.08009064085,3630.19888560456,4490.61299774779,3344.236414706985],null,null,{"interactive":true,"className":"","stroke":false,"color":["#016B38","#016A38","#026B39","#016A38","#006837","#1F9A51","#026D39","#016B39","#006837","#036E3A","#04713C","#06743D","#016A38","#05733D","#016938","#026D39","#016B39","#006837","#036E3A","#036F3B","#016B39","#006938","#016A38","#036F3B","#0E8144","#006837","#A50026","#06743D","#006937","#097940","#006937","#07763E","#036E3A","#44A959","#05723C","#016A38","#006837","#108446","#026D39","#006937","#026C39","#1A9850","#036F3B","#0B7C41","#006937","#7AC565","#006837","#006937","#006937","#05723C","#04703B","#097940","#148D4A","#026D39","#006837","#006937","#006937","#026D39","#0D8043","#006937","#016A38","#026D39","#036F3B","#036F3B","#026D39","#04703B","#0B7D42","#036F3B","#016B39","#006937","#05733C","#036D3A","#128948","#05723C","#07753E","#016A38","#05723C","#097940","#036E3A","#05723C","#006938","#289D52","#006837","#026D39","#006937","#026C39","#036E3A","#006837","#E95838","#036F3B","#016B39","#04703B","#016938","#016A38","#06733D","#016B39","#006938","#016A38","#006837","#006937","#006937","#D0EB85","#19964F","#18934E","#0B7C42","#016B38","#239B51","#FFE797","#026D3A","#006937","#0B7C42","#016A38","#006937","#026C39","#016B38","#016B38","#006937","#0E8144","#118747","#006938","#0E8144","#05723C","#05713C","#016A38","#58B55F","#138B49","#026D39","#0B7C41","#BEE379","#0B7D42","#1A9750","#016938","#016B39","#05733D","#07763E","#016A38","#036F3B","#006937","#83C966","#016A38","#158E4B","#138A49","#04703B","#016A38","#19974F","#269C52","#3DA657","#016B39","#18934D","#04713C","#04703B","#036E3A","#016938","#006837","#DAEF8C","#4FAF5C","#128948","#05723C","#06743D","#016A38","#026C39","#06753E","#6DC064","#118747","#016A38","#036F3B","#026C39","#036F3B","#BFE47A","#04703B","#0D8043","#06753E","#006837","#016938","#026C39","#006837","#0C7E43","#75C365","#05723C","#016B39","#06743D","#04713C","#0D7F43","#16914C","#006937","#0F8345","#006837","#016A38","#06753E","#5FB861","#0A7B41","#016B38","#05733D","#0F8345","#016A38","#33A155","#7EC766","#59B55F","#006837","#299D52","#16914C","#04713B","#04703B","#0E8144","#097A40","#006937","#45AA59","#06743D","#026B39","#026D3A","#07773F","#17934D","#016A38","#026C39","#006938","#016A38","#04713C","#016B39","#16914C","#006937","#016B38","#006837"],"weight":5,"opacity":0.5,"fill":true,"fillColor":["#016B38","#016A38","#026B39","#016A38","#006837","#1F9A51","#026D39","#016B39","#006837","#036E3A","#04713C","#06743D","#016A38","#05733D","#016938","#026D39","#016B39","#006837","#036E3A","#036F3B","#016B39","#006938","#016A38","#036F3B","#0E8144","#006837","#A50026","#06743D","#006937","#097940","#006937","#07763E","#036E3A","#44A959","#05723C","#016A38","#006837","#108446","#026D39","#006937","#026C39","#1A9850","#036F3B","#0B7C41","#006937","#7AC565","#006837","#006937","#006937","#05723C","#04703B","#097940","#148D4A","#026D39","#006837","#006937","#006937","#026D39","#0D8043","#006937","#016A38","#026D39","#036F3B","#036F3B","#026D39","#04703B","#0B7D42","#036F3B","#016B39","#006937","#05733C","#036D3A","#128948","#05723C","#07753E","#016A38","#05723C","#097940","#036E3A","#05723C","#006938","#289D52","#006837","#026D39","#006937","#026C39","#036E3A","#006837","#E95838","#036F3B","#016B39","#04703B","#016938","#016A38","#06733D","#016B39","#006938","#016A38","#006837","#006937","#006937","#D0EB85","#19964F","#18934E","#0B7C42","#016B38","#239B51","#FFE797","#026D3A","#006937","#0B7C42","#016A38","#006937","#026C39","#016B38","#016B38","#006937","#0E8144","#118747","#006938","#0E8144","#05723C","#05713C","#016A38","#58B55F","#138B49","#026D39","#0B7C41","#BEE379","#0B7D42","#1A9750","#016938","#016B39","#05733D","#07763E","#016A38","#036F3B","#006937","#83C966","#016A38","#158E4B","#138A49","#04703B","#016A38","#19974F","#269C52","#3DA657","#016B39","#18934D","#04713C","#04703B","#036E3A","#016938","#006837","#DAEF8C","#4FAF5C","#128948","#05723C","#06743D","#016A38","#026C39","#06753E","#6DC064","#118747","#016A38","#036F3B","#026C39","#036F3B","#BFE47A","#04703B","#0D8043","#06753E","#006837","#016938","#026C39","#006837","#0C7E43","#75C365","#05723C","#016B39","#06743D","#04713C","#0D7F43","#16914C","#006937","#0F8345","#006837","#016A38","#06753E","#5FB861","#0A7B41","#016B38","#05733D","#0F8345","#016A38","#33A155","#7EC766","#59B55F","#006837","#299D52","#16914C","#04713B","#04703B","#0E8144","#097A40","#006937","#45AA59","#06743D","#026B39","#026D3A","#07773F","#17934D","#016A38","#026C39","#006938","#016A38","#04713C","#016B39","#16914C","#006937","#016B38","#006837"],"fillOpacity":0.67},null,null,null,{"interactive":false,"permanent":false,"direction":"auto","opacity":1,"offset":[0,0],"textsize":"10px","textOnly":false,"className":"","sticky":true},null,null]},{"method":"addLegend","args":[{"colors":["#006837 , #52B15D 16.8650327442399%, #BCE278 34.2701461576994%, #FFFAB6 51.6752595711589%, #FDB365 69.0803729846184%, #E14831 86.4854863980779%, #A50026 "],"labels":["100,000","200,000","300,000","400,000","500,000"],"na_color":null,"na_label":"NA","opacity":0.5,"position":"bottomright","type":"numeric","title":"Wildfire Size (ha)","extra":{"p_1":0.1686503274423986,"p_n":0.8648548639807792},"layerId":null,"className":"info legend","group":null}]},{"method":"addAwesomeMarkers","args":[[54.46046,55.0347262,53.8743719,56.4865348,58.3838352,56.0950724,55.6153735,58.4540531,58.4948223,53.6719464],[-110.192871,-111.4891624,-110.3960237,-116.0722786,-116.0395199,-117.8522612,-116.2690044,-116.0627799,-116.5904486,-110.0204659],{"icon":"home","markerColor":"darkgreen","iconColor":"white","spin":false,"squareMarker":false,"iconRotate":0,"font":"monospace","prefix":"glyphicon"},null,null,{"interactive":true,"draggable":false,"keyboard":true,"title":"","alt":"","zIndexOffset":0,"opacity":1,"riseOnHover":false,"riseOffset":250},null,null,null,null,null,{"interactive":false,"permanent":false,"direction":"auto","opacity":1,"offset":[0,0],"textsize":"10px","textOnly":false,"className":"","sticky":true},null]},{"method":"addAwesomeMarkers","args":[[49.7932232,53.6919793,51.6751804,49.7595798,50.0691848,50.4016332,49.8696838,51.2096312,49.4169215,50.4016332],[-112.1436569,-111.5421091,-110.6652639,-112.2622938,-112.1076913,-113.2632357,-111.3793512,-115.5936318,-112.866984,-113.2632357],{"icon":"home","markerColor":"darkred","iconColor":"black","spin":false,"squareMarker":false,"iconRotate":0,"font":"monospace","prefix":"glyphicon"},null,null,{"interactive":true,"draggable":false,"keyboard":true,"title":"","alt":"","zIndexOffset":0,"opacity":1,"riseOnHover":false,"riseOffset":250},null,null,null,null,null,{"interactive":false,"permanent":false,"direction":"auto","opacity":1,"offset":[0,0],"textsize":"10px","textOnly":false,"className":"","sticky":true},null]},{"method":"addAwesomeMarkers","args":[[55.8991194,52.3109228,49.51028,51.1451748,53.4577179,53.476109,53.9691447,56.1546371,49.5942192,55.935125],[-110.7411434,-114.947389,-113.0192086,-114.0158444,-113.505378,-112.8778585,-111.6887198,-118.5111563,-113.6264576,-115.609415],{"icon":"usd","markerColor":"darkred","iconColor":"black","spin":false,"squareMarker":false,"iconRotate":0,"font":"monospace","prefix":"glyphicon"},null,null,{"interactive":true,"draggable":false,"keyboard":true,"title":"","alt":"","zIndexOffset":0,"opacity":1,"riseOnHover":false,"riseOffset":250},null,null,null,null,null,{"interactive":false,"permanent":false,"direction":"auto","opacity":1,"offset":[0,0],"textsize":"10px","textOnly":false,"className":"","sticky":true},null]},{"method":"addAwesomeMarkers","args":[[58.502505,57.6527825,52.3380196,51.3699347,50.6445197,52.3199695,55.17108,53.5186571,53.5762678,53.8422302],[-119.400279,-111.4667,-114.076639,-114.014186,-114.044788,-114.1158167,-118.7949873,-114.1293093,-113.1255397,-113.5406548],{"icon":"usd","markerColor":"darkgreen","iconColor":"white","spin":false,"squareMarker":false,"iconRotate":0,"font":"monospace","prefix":"glyphicon"},null,null,{"interactive":true,"draggable":false,"keyboard":true,"title":"","alt":"","zIndexOffset":0,"opacity":1,"riseOnHover":false,"riseOffset":250},null,null,null,null,null,{"interactive":false,"permanent":false,"direction":"auto","opacity":1,"offset":[0,0],"textsize":"10px","textOnly":false,"className":"","sticky":true},null]},{"method":"addControl","args":["<div>\n  <strong>Marker Legend<\/strong>\n<\/div>\n<div>\n  <div style=\"vertical-align: middle; display:&#10;          inline-block; position: relative;\" class=\"awesome-marker-icon-darkgreen awesome-marker \">\n    <i class=\"glyphicon glyphicon-home \" style=\"color: white; ; margin-right: 0px\"><\/i>\n  <\/div>\n  <span style=\"font-size: 10px;\">Top First Nations<\/span>\n<\/div>\n<div>\n  <div style=\"vertical-align: middle; display:&#10;          inline-block; position: relative;\" class=\"awesome-marker-icon-darkred awesome-marker \">\n    <i class=\"glyphicon glyphicon-home \" style=\"color: black; ; margin-right: 0px\"><\/i>\n  <\/div>\n  <span style=\"font-size: 10px;\">Bottom First Nations<\/span>\n<\/div>\n<div>\n  <div style=\"vertical-align: middle; display:&#10;          inline-block; position: relative;\" class=\"awesome-marker-icon-darkgreen awesome-marker \">\n    <i class=\"glyphicon glyphicon-usd \" style=\"color: white; ; margin-right: 0px\"><\/i>\n  <\/div>\n  <span style=\"font-size: 10px;\">Top Income<\/span>\n<\/div>\n<div>\n  <div style=\"vertical-align: middle; display:&#10;          inline-block; position: relative;\" class=\"awesome-marker-icon-darkred awesome-marker \">\n    <i class=\"glyphicon glyphicon-usd \" style=\"color: black; ; margin-right: 0px\"><\/i>\n  <\/div>\n  <span style=\"font-size: 10px;\">Bottom Income<\/span>\n<\/div>","bottomleft",null,"info legend leaflet-control"]}],"limits":{"lat":[49.4169215,59.969783],"lng":[-119.975783,-110.006883]}},"evals":[],"jsHooks":[]}</script>
+</div>
+</div>
+<p>As shown above, there is a large variation in where high/low income municipalities are situated, and non first nations municipalities are situated in areas where no wildfires occur due to geography, in fact they are located within an area called “Non Forest Protection Area”- as such there are no wildfires.</p>
+<p>Areas with a high First Nations population are reserves, typically found in northern/rural Alberta. Unfortunately, due to the isolation aspect many of these areas have slow fire response times. This does present an opportunity for both the province and the First Nations.</p>
+<hr>
+</section>
+<section id="recommendation-1" class="level1">
+<h1>Recommendation 1</h1>
+<p>Employment opportunities are scarce on reserves according to indigenous Services and Statistics Canada, with an employment rate of 47% compared to the national average of 74%. One way to combat this is through employment opportunities within Wildfire firefighting and support. Currently the province employs firefighters through the “Firetack” program however historically this program has been more like exploitation than employment. The province contracts eight person crews that function similarly to wage wild land firefighters, no official pay grid is available to the public.</p>
+<p>In the most recent Alberta Wildfire Payment Directive pay is listed for emergency non-contract hiring. Some notable figures are the Firetack Leader and member which are listed at $22.08 and $20.97 per hour respectfully. As of April 1st 2026, the lowest a wage wildland firefighter member can make is $23.80 an hour.</p>
+<p>As the province is facing extreme turnover for seasonal positions, it should look towards a more sustainable employment program with First Nations- a compromise that would benefit both parties.</p>
+<hr>
+</section>
+<section id="recommendation-2" class="level1">
+<h1>Recommendation 2</h1>
+<p>There should be a greater emphasis on preventive measures to ensure rural fires don’t remain undetected. With advancements in drone and infrared technology, tower observers could be trained and equipped with drones that could help survey the land and detect any hot-spots or early start fires. Large scale wildfires can cost millions of dollars a day, whereas state of the art drones may cost a fraction of that, between $10-20,000.</p>
+<hr>
+</section>
+<section id="conclusion" class="level1">
+<h1>Conclusion</h1>
+<p>Wildfires will continue to be a part of every Albertan’s life as they are a natural occurrence and can’t completely be prevented. What can be changed is how prepared and proactive the province is, doing so can; prevent damages, create employment opportunities and invest in future technology.</p>
+</section>
+<section id="appendix" class="level1">
+<h1>Appendix</h1>
+<p>Figure [1] - Machine Learning Model 1 Predictors</p>
+<div class="cell">
+<div class="cell-output-display">
+<div id="yfyowyufyo" style="padding-left:0px;padding-right:0px;padding-top:10px;padding-bottom:10px;overflow-x:auto;overflow-y:auto;width:auto;height:auto;">
+<style>#yfyowyufyo table {
+  font-family: system-ui, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+#yfyowyufyo thead, #yfyowyufyo tbody, #yfyowyufyo tfoot, #yfyowyufyo tr, #yfyowyufyo td, #yfyowyufyo th {
+  border-style: none;
+}
+
+#yfyowyufyo p {
+  margin: 0;
+  padding: 0;
+}
+
+#yfyowyufyo .gt_table {
+  display: table;
+  border-collapse: collapse;
+  line-height: normal;
+  margin-left: auto;
+  margin-right: auto;
+  color: #333333;
+  font-size: 16px;
+  font-weight: normal;
+  font-style: normal;
+  background-color: #FFFFFF;
+  width: auto;
+  border-top-style: solid;
+  border-top-width: 2px;
+  border-top-color: #A8A8A8;
+  border-right-style: none;
+  border-right-width: 2px;
+  border-right-color: #D3D3D3;
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #A8A8A8;
+  border-left-style: none;
+  border-left-width: 2px;
+  border-left-color: #D3D3D3;
+}
+
+#yfyowyufyo .gt_caption {
+  padding-top: 4px;
+  padding-bottom: 4px;
+}
+
+#yfyowyufyo .gt_title {
+  color: #333333;
+  font-size: 125%;
+  font-weight: initial;
+  padding-top: 4px;
+  padding-bottom: 4px;
+  padding-left: 5px;
+  padding-right: 5px;
+  border-bottom-color: #FFFFFF;
+  border-bottom-width: 0;
+}
+
+#yfyowyufyo .gt_subtitle {
+  color: #333333;
+  font-size: 85%;
+  font-weight: initial;
+  padding-top: 3px;
+  padding-bottom: 5px;
+  padding-left: 5px;
+  padding-right: 5px;
+  border-top-color: #FFFFFF;
+  border-top-width: 0;
+}
+
+#yfyowyufyo .gt_heading {
+  background-color: #FFFFFF;
+  text-align: center;
+  border-bottom-color: #FFFFFF;
+  border-left-style: none;
+  border-left-width: 1px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 1px;
+  border-right-color: #D3D3D3;
+}
+
+#yfyowyufyo .gt_bottom_border {
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+}
+
+#yfyowyufyo .gt_col_headings {
+  border-top-style: solid;
+  border-top-width: 2px;
+  border-top-color: #D3D3D3;
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+  border-left-style: none;
+  border-left-width: 1px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 1px;
+  border-right-color: #D3D3D3;
+}
+
+#yfyowyufyo .gt_col_heading {
+  color: #333333;
+  background-color: #FFFFFF;
+  font-size: 100%;
+  font-weight: normal;
+  text-transform: inherit;
+  border-left-style: none;
+  border-left-width: 1px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 1px;
+  border-right-color: #D3D3D3;
+  vertical-align: bottom;
+  padding-top: 5px;
+  padding-bottom: 6px;
+  padding-left: 5px;
+  padding-right: 5px;
+  overflow-x: hidden;
+}
+
+#yfyowyufyo .gt_column_spanner_outer {
+  color: #333333;
+  background-color: #FFFFFF;
+  font-size: 100%;
+  font-weight: normal;
+  text-transform: inherit;
+  padding-top: 0;
+  padding-bottom: 0;
+  padding-left: 4px;
+  padding-right: 4px;
+}
+
+#yfyowyufyo .gt_column_spanner_outer:first-child {
+  padding-left: 0;
+}
+
+#yfyowyufyo .gt_column_spanner_outer:last-child {
+  padding-right: 0;
+}
+
+#yfyowyufyo .gt_column_spanner {
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+  vertical-align: bottom;
+  padding-top: 5px;
+  padding-bottom: 5px;
+  overflow-x: hidden;
+  display: inline-block;
+  width: 100%;
+}
+
+#yfyowyufyo .gt_spanner_row {
+  border-bottom-style: hidden;
+}
+
+#yfyowyufyo .gt_group_heading {
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+  color: #333333;
+  background-color: #FFFFFF;
+  font-size: 100%;
+  font-weight: initial;
+  text-transform: inherit;
+  border-top-style: solid;
+  border-top-width: 2px;
+  border-top-color: #D3D3D3;
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+  border-left-style: none;
+  border-left-width: 1px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 1px;
+  border-right-color: #D3D3D3;
+  vertical-align: middle;
+  text-align: left;
+}
+
+#yfyowyufyo .gt_empty_group_heading {
+  padding: 0.5px;
+  color: #333333;
+  background-color: #FFFFFF;
+  font-size: 100%;
+  font-weight: initial;
+  border-top-style: solid;
+  border-top-width: 2px;
+  border-top-color: #D3D3D3;
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+  vertical-align: middle;
+}
+
+#yfyowyufyo .gt_from_md > :first-child {
+  margin-top: 0;
+}
+
+#yfyowyufyo .gt_from_md > :last-child {
+  margin-bottom: 0;
+}
+
+#yfyowyufyo .gt_row {
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+  margin: 10px;
+  border-top-style: solid;
+  border-top-width: 1px;
+  border-top-color: #D3D3D3;
+  border-left-style: none;
+  border-left-width: 1px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 1px;
+  border-right-color: #D3D3D3;
+  vertical-align: middle;
+  overflow-x: hidden;
+}
+
+#yfyowyufyo .gt_stub {
+  color: #333333;
+  background-color: #FFFFFF;
+  font-size: 100%;
+  font-weight: initial;
+  text-transform: inherit;
+  border-right-style: solid;
+  border-right-width: 2px;
+  border-right-color: #D3D3D3;
+  padding-left: 5px;
+  padding-right: 5px;
+}
+
+#yfyowyufyo .gt_stub_row_group {
+  color: #333333;
+  background-color: #FFFFFF;
+  font-size: 100%;
+  font-weight: initial;
+  text-transform: inherit;
+  border-right-style: solid;
+  border-right-width: 2px;
+  border-right-color: #D3D3D3;
+  padding-left: 5px;
+  padding-right: 5px;
+  vertical-align: top;
+}
+
+#yfyowyufyo .gt_row_group_first td {
+  border-top-width: 2px;
+}
+
+#yfyowyufyo .gt_row_group_first th {
+  border-top-width: 2px;
+}
+
+#yfyowyufyo .gt_summary_row {
+  color: #333333;
+  background-color: #FFFFFF;
+  text-transform: inherit;
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+}
+
+#yfyowyufyo .gt_first_summary_row {
+  border-top-style: solid;
+  border-top-color: #D3D3D3;
+}
+
+#yfyowyufyo .gt_first_summary_row.thick {
+  border-top-width: 2px;
+}
+
+#yfyowyufyo .gt_last_summary_row {
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+}
+
+#yfyowyufyo .gt_grand_summary_row {
+  color: #333333;
+  background-color: #FFFFFF;
+  text-transform: inherit;
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+}
+
+#yfyowyufyo .gt_first_grand_summary_row {
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+  border-top-style: double;
+  border-top-width: 6px;
+  border-top-color: #D3D3D3;
+}
+
+#yfyowyufyo .gt_last_grand_summary_row_top {
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+  border-bottom-style: double;
+  border-bottom-width: 6px;
+  border-bottom-color: #D3D3D3;
+}
+
+#yfyowyufyo .gt_striped {
+  background-color: rgba(128, 128, 128, 0.05);
+}
+
+#yfyowyufyo .gt_table_body {
+  border-top-style: solid;
+  border-top-width: 2px;
+  border-top-color: #D3D3D3;
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+}
+
+#yfyowyufyo .gt_footnotes {
+  color: #333333;
+  background-color: #FFFFFF;
+  border-bottom-style: none;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+  border-left-style: none;
+  border-left-width: 2px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 2px;
+  border-right-color: #D3D3D3;
+}
+
+#yfyowyufyo .gt_footnote {
+  margin: 0px;
+  font-size: 90%;
+  padding-top: 4px;
+  padding-bottom: 4px;
+  padding-left: 5px;
+  padding-right: 5px;
+}
+
+#yfyowyufyo .gt_sourcenotes {
+  color: #333333;
+  background-color: #FFFFFF;
+  border-bottom-style: none;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+  border-left-style: none;
+  border-left-width: 2px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 2px;
+  border-right-color: #D3D3D3;
+}
+
+#yfyowyufyo .gt_sourcenote {
+  font-size: 90%;
+  padding-top: 4px;
+  padding-bottom: 4px;
+  padding-left: 5px;
+  padding-right: 5px;
+}
+
+#yfyowyufyo .gt_left {
+  text-align: left;
+}
+
+#yfyowyufyo .gt_center {
+  text-align: center;
+}
+
+#yfyowyufyo .gt_right {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+#yfyowyufyo .gt_font_normal {
+  font-weight: normal;
+}
+
+#yfyowyufyo .gt_font_bold {
+  font-weight: bold;
+}
+
+#yfyowyufyo .gt_font_italic {
+  font-style: italic;
+}
+
+#yfyowyufyo .gt_super {
+  font-size: 65%;
+}
+
+#yfyowyufyo .gt_footnote_marks {
+  font-size: 75%;
+  vertical-align: 0.4em;
+  position: initial;
+}
+
+#yfyowyufyo .gt_asterisk {
+  font-size: 100%;
+  vertical-align: 0;
+}
+
+#yfyowyufyo .gt_indent_1 {
+  text-indent: 5px;
+}
+
+#yfyowyufyo .gt_indent_2 {
+  text-indent: 10px;
+}
+
+#yfyowyufyo .gt_indent_3 {
+  text-indent: 15px;
+}
+
+#yfyowyufyo .gt_indent_4 {
+  text-indent: 20px;
+}
+
+#yfyowyufyo .gt_indent_5 {
+  text-indent: 25px;
+}
+
+#yfyowyufyo .katex-display {
+  display: inline-flex !important;
+  margin-bottom: 0.75em !important;
+}
+
+#yfyowyufyo div.Reactable > div.rt-table > div.rt-thead > div.rt-tr.rt-tr-group-header > div.rt-th-group:after {
+  height: 0px !important;
+}
+</style>
+
+<table class="gt_table caption-top table table-sm table-striped small" data-quarto-bootstrap="false">
+<thead>
+<tr class="gt_col_headings header">
+<th id="Predictors" class="gt_col_heading gt_columns_bottom_border gt_left" data-quarto-table-cell-role="th" scope="col">Predictors</th>
+</tr>
+</thead>
+<tbody class="gt_table_body">
+<tr class="odd">
+<td class="gt_row gt_left" headers="Predictors">Fire Start Date</td>
+</tr>
+<tr class="even">
+<td class="gt_row gt_left" headers="Predictors">Latitude</td>
+</tr>
+<tr class="odd">
+<td class="gt_row gt_left" headers="Predictors">Longitude</td>
+</tr>
+<tr class="even">
+<td class="gt_row gt_left" headers="Predictors">General Cause</td>
+</tr>
+<tr class="odd">
+<td class="gt_row gt_left" headers="Predictors">Temperature</td>
+</tr>
+<tr class="even">
+<td class="gt_row gt_left" headers="Predictors">Relative Humidity</td>
+</tr>
+<tr class="odd">
+<td class="gt_row gt_left" headers="Predictors">Wind Direction</td>
+</tr>
+<tr class="even">
+<td class="gt_row gt_left" headers="Predictors">Wind Speed</td>
+</tr>
+<tr class="odd">
+<td class="gt_row gt_left" headers="Predictors">Fuel Type</td>
+</tr>
+<tr class="even">
+<td class="gt_row gt_left" headers="Predictors">Month</td>
+</tr>
+<tr class="odd">
+<td class="gt_row gt_left" headers="Predictors">Closest City</td>
+</tr>
+</tbody>
+</table>
+
+</div>
+</div>
+</div>
+</section>
+<section id="citations" class="level1">
+<h1>Citations</h1>
+<p>https://www.rhs.org.uk/prevention-protection/wind-scorch https://www.sac-isc.gc.ca/eng/1690909773300/1690909797208#chp3-3 https://www150.statcan.gc.ca/n1/pub/41-20-0002/412000022024002-eng.htm https://open.alberta.ca/dataset/e325baaf-e19a-4b31-a6c4-ee3e1b212472/resource/ac17ebca-a99f-410b-9508-0a65012033cf/download/fp-alberta-wildfire-payment-directive-2026-03.pdf https://pmc.ncbi.nlm.nih.gov/articles/PMC12246202/ https://natural-resources.canada.ca/stories/simply-science/glimpse-future-boreal-forest-less-frequent-more-aggressive-fires</p>
+</section>
+
+</main>
+<!-- /main column -->
+<script id="quarto-html-after-body" type="application/javascript">
+  window.document.addEventListener("DOMContentLoaded", function (event) {
+    const icon = "";
+    const anchorJS = new window.AnchorJS();
+    anchorJS.options = {
+      placement: 'right',
+      icon: icon
+    };
+    anchorJS.add('.anchored');
+    const isCodeAnnotation = (el) => {
+      for (const clz of el.classList) {
+        if (clz.startsWith('code-annotation-')) {                     
+          return true;
+        }
+      }
+      return false;
+    }
+    const onCopySuccess = function(e) {
+      // button target
+      const button = e.trigger;
+      // don't keep focus
+      button.blur();
+      // flash "checked"
+      button.classList.add('code-copy-button-checked');
+      var currentTitle = button.getAttribute("title");
+      button.setAttribute("title", "Copied!");
+      let tooltip;
+      if (window.bootstrap) {
+        button.setAttribute("data-bs-toggle", "tooltip");
+        button.setAttribute("data-bs-placement", "left");
+        button.setAttribute("data-bs-title", "Copied!");
+        tooltip = new bootstrap.Tooltip(button, 
+          { trigger: "manual", 
+            customClass: "code-copy-button-tooltip",
+            offset: [0, -8]});
+        tooltip.show();    
+      }
+      setTimeout(function() {
+        if (tooltip) {
+          tooltip.hide();
+          button.removeAttribute("data-bs-title");
+          button.removeAttribute("data-bs-toggle");
+          button.removeAttribute("data-bs-placement");
+        }
+        button.setAttribute("title", currentTitle);
+        button.classList.remove('code-copy-button-checked');
+      }, 1000);
+      // clear code selection
+      e.clearSelection();
+    }
+    const getTextToCopy = function(trigger) {
+      const outerScaffold = trigger.parentElement.cloneNode(true);
+      const codeEl = outerScaffold.querySelector('code');
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+    }
+    const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+      text: getTextToCopy
+    });
+    clipboard.on('success', onCopySuccess);
+    if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+      const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+        text: getTextToCopy,
+        container: window.document.getElementById('quarto-embedded-source-code-modal')
+      });
+      clipboardModal.on('success', onCopySuccess);
+    }
+      var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+      var mailtoRegex = new RegExp(/^mailto:/);
+        var filterRegex = new RegExp('/' + window.location.host + '/');
+      var isInternal = (href) => {
+          return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+      }
+      // Inspect non-navigation links and adorn them if external
+     var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+      for (var i=0; i<links.length; i++) {
+        const link = links[i];
+        if (!isInternal(link.href)) {
+          // undo the damage that might have been done by quarto-nav.js in the case of
+          // links that we want to consider external
+          if (link.dataset.originalHref !== undefined) {
+            link.href = link.dataset.originalHref;
+          }
+        }
+      }
+    function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+      const config = {
+        allowHTML: true,
+        maxWidth: 500,
+        delay: 100,
+        arrow: false,
+        appendTo: function(el) {
+            return el.parentElement;
+        },
+        interactive: true,
+        interactiveBorder: 10,
+        theme: 'quarto',
+        placement: 'bottom-start',
+      };
+      if (contentFn) {
+        config.content = contentFn;
+      }
+      if (onTriggerFn) {
+        config.onTrigger = onTriggerFn;
+      }
+      if (onUntriggerFn) {
+        config.onUntrigger = onUntriggerFn;
+      }
+      window.tippy(el, config); 
+    }
+    const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+    for (var i=0; i<noterefs.length; i++) {
+      const ref = noterefs[i];
+      tippyHover(ref, function() {
+        // use id or data attribute instead here
+        let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+        try { href = new URL(href).hash; } catch {}
+        const id = href.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note) {
+          return note.innerHTML;
+        } else {
+          return "";
+        }
+      });
+    }
+    const xrefs = window.document.querySelectorAll('a.quarto-xref');
+    const processXRef = (id, note) => {
+      // Strip column container classes
+      const stripColumnClz = (el) => {
+        el.classList.remove("page-full", "page-columns");
+        if (el.children) {
+          for (const child of el.children) {
+            stripColumnClz(child);
+          }
+        }
+      }
+      stripColumnClz(note)
+      if (id === null || id.startsWith('sec-')) {
+        // Special case sections, only their first couple elements
+        const container = document.createElement("div");
+        if (note.children && note.children.length > 2) {
+          container.appendChild(note.children[0].cloneNode(true));
+          for (let i = 1; i < note.children.length; i++) {
+            const child = note.children[i];
+            if (child.tagName === "P" && child.innerText === "") {
+              continue;
+            } else {
+              container.appendChild(child.cloneNode(true));
+              break;
+            }
+          }
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(container);
+          }
+          return container.innerHTML
+        } else {
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(note);
+          }
+          return note.innerHTML;
+        }
+      } else {
+        // Remove any anchor links if they are present
+        const anchorLink = note.querySelector('a.anchorjs-link');
+        if (anchorLink) {
+          anchorLink.remove();
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        if (note.classList.contains("callout")) {
+          return note.outerHTML;
+        } else {
+          return note.innerHTML;
+        }
+      }
+    }
+    for (var i=0; i<xrefs.length; i++) {
+      const xref = xrefs[i];
+      tippyHover(xref, undefined, function(instance) {
+        instance.disable();
+        let url = xref.getAttribute('href');
+        let hash = undefined; 
+        if (url.startsWith('#')) {
+          hash = url;
+        } else {
+          try { hash = new URL(url).hash; } catch {}
+        }
+        if (hash) {
+          const id = hash.replace(/^#\/?/, "");
+          const note = window.document.getElementById(id);
+          if (note !== null) {
+            try {
+              const html = processXRef(id, note.cloneNode(true));
+              instance.setContent(html);
+            } finally {
+              instance.enable();
+              instance.show();
+            }
+          } else {
+            // See if we can fetch this
+            fetch(url.split('#')[0])
+            .then(res => res.text())
+            .then(html => {
+              const parser = new DOMParser();
+              const htmlDoc = parser.parseFromString(html, "text/html");
+              const note = htmlDoc.getElementById(id);
+              if (note !== null) {
+                const html = processXRef(id, note);
+                instance.setContent(html);
+              } 
+            }).finally(() => {
+              instance.enable();
+              instance.show();
+            });
+          }
+        } else {
+          // See if we can fetch a full url (with no hash to target)
+          // This is a special case and we should probably do some content thinning / targeting
+          fetch(url)
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.querySelector('main.content');
+            if (note !== null) {
+              // This should only happen for chapter cross references
+              // (since there is no id in the URL)
+              // remove the first header
+              if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+                note.children[0].remove();
+              }
+              const html = processXRef(null, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      }, function(instance) {
+      });
+    }
+        let selectedAnnoteEl;
+        const selectorForAnnotation = ( cell, annotation) => {
+          let cellAttr = 'data-code-cell="' + cell + '"';
+          let lineAttr = 'data-code-annotation="' +  annotation + '"';
+          const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+          return selector;
+        }
+        const selectCodeLines = (annoteEl) => {
+          const doc = window.document;
+          const targetCell = annoteEl.getAttribute("data-target-cell");
+          const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+          const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+          const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+          const lineIds = lines.map((line) => {
+            return targetCell + "-" + line;
+          })
+          let top = null;
+          let height = null;
+          let parent = null;
+          if (lineIds.length > 0) {
+              //compute the position of the single el (top and bottom and make a div)
+              const el = window.document.getElementById(lineIds[0]);
+              top = el.offsetTop;
+              height = el.offsetHeight;
+              parent = el.parentElement.parentElement;
+            if (lineIds.length > 1) {
+              const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+              const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+              height = bottom - top;
+            }
+            if (top !== null && height !== null && parent !== null) {
+              // cook up a div (if necessary) and position it 
+              let div = window.document.getElementById("code-annotation-line-highlight");
+              if (div === null) {
+                div = window.document.createElement("div");
+                div.setAttribute("id", "code-annotation-line-highlight");
+                div.style.position = 'absolute';
+                parent.appendChild(div);
+              }
+              div.style.top = top - 2 + "px";
+              div.style.height = height + 4 + "px";
+              div.style.left = 0;
+              let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+              if (gutterDiv === null) {
+                gutterDiv = window.document.createElement("div");
+                gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+                gutterDiv.style.position = 'absolute';
+                const codeCell = window.document.getElementById(targetCell);
+                const gutter = codeCell.querySelector('.code-annotation-gutter');
+                gutter.appendChild(gutterDiv);
+              }
+              gutterDiv.style.top = top - 2 + "px";
+              gutterDiv.style.height = height + 4 + "px";
+            }
+            selectedAnnoteEl = annoteEl;
+          }
+        };
+        const unselectCodeLines = () => {
+          const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+          elementsIds.forEach((elId) => {
+            const div = window.document.getElementById(elId);
+            if (div) {
+              div.remove();
+            }
+          });
+          selectedAnnoteEl = undefined;
+        };
+          // Handle positioning of the toggle
+      window.addEventListener(
+        "resize",
+        throttle(() => {
+          elRect = undefined;
+          if (selectedAnnoteEl) {
+            selectCodeLines(selectedAnnoteEl);
+          }
+        }, 10)
+      );
+      function throttle(fn, ms) {
+      let throttle = false;
+      let timer;
+        return (...args) => {
+          if(!throttle) { // first call gets through
+              fn.apply(this, args);
+              throttle = true;
+          } else { // all the others get throttled
+              if(timer) clearTimeout(timer); // cancel #2
+              timer = setTimeout(() => {
+                fn.apply(this, args);
+                timer = throttle = false;
+              }, ms);
+          }
+        };
+      }
+        // Attach click handler to the DT
+        const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+        for (const annoteDlNode of annoteDls) {
+          annoteDlNode.addEventListener('click', (event) => {
+            const clickedEl = event.target;
+            if (clickedEl !== selectedAnnoteEl) {
+              unselectCodeLines();
+              const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+              if (activeEl) {
+                activeEl.classList.remove('code-annotation-active');
+              }
+              selectCodeLines(clickedEl);
+              clickedEl.classList.add('code-annotation-active');
+            } else {
+              // Unselect the line
+              unselectCodeLines();
+              clickedEl.classList.remove('code-annotation-active');
+            }
+          });
+        }
+    const findCites = (el) => {
+      const parentEl = el.parentElement;
+      if (parentEl) {
+        const cites = parentEl.dataset.cites;
+        if (cites) {
+          return {
+            el,
+            cites: cites.split(' ')
+          };
+        } else {
+          return findCites(el.parentElement)
+        }
+      } else {
+        return undefined;
+      }
+    };
+    var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+    for (var i=0; i<bibliorefs.length; i++) {
+      const ref = bibliorefs[i];
+      const citeInfo = findCites(ref);
+      if (citeInfo) {
+        tippyHover(citeInfo.el, function() {
+          var popup = window.document.createElement('div');
+          citeInfo.cites.forEach(function(cite) {
+            var citeDiv = window.document.createElement('div');
+            citeDiv.classList.add('hanging-indent');
+            citeDiv.classList.add('csl-entry');
+            var biblioDiv = window.document.getElementById('ref-' + cite);
+            if (biblioDiv) {
+              citeDiv.innerHTML = biblioDiv.innerHTML;
+            }
+            popup.appendChild(citeDiv);
+          });
+          return popup.innerHTML;
+        });
+      }
+    }
+  });
+  </script>
+</div> <!-- /content -->
+
+
+
+
+</body></html>
