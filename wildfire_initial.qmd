@@ -1,34 +1,32 @@
 ---
 title: "Exploring Wildfire Causes and Provincial Responses"
-format: html
+subtitle: "Prepared by Kaden Fraser"
+format:
+  html: 
+    embed-resources: true
 editor: visual
 toc: true
 toc_depth: 1
-html:
-  embed-resources: true
+
 ---
 
 # Initial Summary
 
-think of something ...
+Wildfires are phenomenon that impact **everyone** in Alberta, in recent years fire intensity has increased and the effects are getting worse. Not all fires are bad however, the boreal forests in Canada burn naturally and is actually how some flora reproduce. The issue is when human lives, infrastructure and industry get impacted, which can be prevented through proactive measures. 
 
+This document explores what creates large wildfires that may impact human life as well as the current provincial resource allocation. Knowing this can help provide a foundation to creating a system where the forest can burn safe and naturally- when it needs to.
 
 # Methodology
 
-The data that is used for this analysis has been scraped from official Government of Alberta sources, location data has been scraped from Nominatim Opens street map. Government of Alberta sources include; 2006-2025 historical wildfire data, and Alberta Regional data. The Alberta Regional data includes the top and bottom ten values for both median family income and percentage of first nations in the municipality. Median family income that was reported at \$0 was excluded as it is erroneous.
+The data that is used for this analysis has been scraped from official Government of Alberta sources, location data has been scraped from Nominatim Opens street map. Government of Alberta sources include; 2006-2025 historical wildfire data, and Alberta Regional data. The Alberta Regional data includes the top and bottom ten values for both median family income and percentage of first nations in the municipality. Median family income that was reported at \$0 was excluded as it is erroneous. 
 
-*** 
+------------------------------------------------------------------------
 
 # Limitations
 
-This analysis has some limitations; firstly some data may be wrongly reported. For example, the minimum wildfire size that can be reported is .1 hectares, however any fire that is responded to by wildfire assets- is considered a wildfire. This creates reporting issues as car fires may be inaccurately listed as wildfires. As such, for a majority of this report only fires with areas larger than .11 hectares will be considered. Furthermore as per definition only fires that are started by; Lightning, restart or undetermined- will be considered as natural fires with the rest being considered human caused.
+This analysis has some limitations; firstly some data may be wrongly reported. For example, the minimum wildfire size that can be reported is .1 hectares, however any fire that is responded to by wildfire assets is considered a wildfire. This creates reporting issues as car fires may be inaccurately listed as wildfires. As such, for a majority of this report only fires with areas larger than .11 hectares will be considered. Furthermore as per definition only fires that are started by; Lightning, restart or undetermined- will be considered as natural fires with the rest being considered human caused. The regressions use data available only on the first day of a fire to predict the future size, to improve the model in the future the utilization of interval data would be preferred.
 
-***
-
-
-
-
-
+------------------------------------------------------------------------
 
 ```{r, include = FALSE, echo = FALSE, message= FALSE, warning= FALSE}
 
@@ -36,7 +34,6 @@ library(tidyverse)
 library(tidyquant)
 library(arrow)
 library(ggplot2)
-library(stringr)
 library(lubridate)
 library(geosphere)
 library(rsample)
@@ -48,11 +45,10 @@ library(rpart.plot)
 library(gt)
 library(rvest)
 library(jsonlite)
-library(leaflet)
-library(xgboost)
-library(Ckmeans.1d.dp)
-library(stringr)
-library(leaflegend)
+library(leaflet)   #required for the map 
+library(xgboost)   #Reguired for the XGboost reg 
+library(Ckmeans.1d.dp) #required for the XGBoost plot 
+library(leaflegend) #required for the map
 
 url <- "https://open.alberta.ca/dataset/a221e7a0-4f46-4be7-9c5a-e29de9a3447e/resource/80480824-0c50-456c-9723-f9d4fc136141/download/fp-historical-wildfire-data-2006-2025.csv"
 dest_file <- "fp-historical-wildfire-data-2006-2025.csv"
@@ -111,7 +107,7 @@ new_wf_ml
 
 # Fire Size Proximity to City
 
-Time and distance are the most important factors when creating wildfire policy. Time is important as fires grow at an exponential rate, the sooner a response is initiated the better. Distance is just as important as well as it determine the rate of which resources can respond to the fire. This plot below showcases the relationship between each fire and the respective distance to the city, large fires are defined by any fire with an area larger than 2000 hectares while small is anything less than 2000.
+**Time** and **distance** are among the most important factors when creating wildfire policy. Time is important as fires grow at an exponential rate, the sooner a response is initiated the better. Distance is just as important as well as it determine the rate of which resources can respond to the fire. This plot below showcases the relationship between each fire and the respective distance to the city, large fires are defined by any fire with an area larger than 2000 hectares while small is anything less than 2000.
 
 ```{r echo = FALSE}
 #basic analysis on closest city 
@@ -166,16 +162,11 @@ As you can see above, no real real visual relationship occurs. If anything there
 
 # Machine Learning Model 1 - Simple Linear Regression
 
-To further understand the underlying issues behind large fires, three separate models were chosen to explore what impacts fire size. The first of which being a simple linear regression model. This model comprises of 11 separate predictors [see in appendix]. After running the model we get the following statistics;
+To further understand the underlying issues behind large fires, three separate models were chosen to explore what impacts fire size. The first of which being a *simple linear regression model*. This model comprises of 11 separate predictors \[see in appendix\]. After running the model we get the following statistics;
 
 ```{r echo = FALSE, message= FALSE, warning= FALSE }
-# ML model
+# ML model 1, linear regression
 
-library(rsample)
-library(recipes)
-library(parsnip)
-library(yardstick)
-library(broom)
 
 set.seed(123)
 
@@ -237,23 +228,31 @@ gt_lm_stats
 
 #parsnip::glance(wf_lm)
 
-
+lin_graph <- out %>% 
+  ggplot(aes(x = .pred, y = `Current Size`)) + geom_point()+
+  labs(
+    title = "Predicted vs Actual",
+    subtitle = "XGBoost Model"
+  )+ 
+  ggplot2::theme_minimal() +
+  ggplot2::theme(
+    legend.position = "bottom",
+    plot.title = element_text(face = "bold"),
+    legend.text = element_text(size = 10),
+    panel.border = element_rect(color = "black", fill = NA, linewidth =.05),
+    panel.background = element_rect(fill = "white", color = NA)
+  )
+#lin_graph
 
 ```
 
-yap more about it 
-
-
-
-
-
-
+While this model does test a significant amount of available indicators, it could be improved upon as drawing a linear relationship between all the indicators may prove difficult.
 
 ------------------------------------------------------------------------
 
 # Machine Learning Model 2 - Extreme Gradient Boost
 
-Continuing on, the second model being utilized is an Extreme Gradient Boost regression model. As this model contains many non linear relationships; such as wind direction and fuel type- a more robust model is needed. The same predictors are being utilized for this model. 
+Continuing on, the second model being utilized is an *Extreme Gradient Boost regression model*. As this model contains many non linear relationships; such as wind direction and fuel type- a more robust model is needed. *Extreme Gradient Boosting* minimizes error by starting at the weakest point and moving downward, minimizing the difference between predicted and actual. The same predictors are being utilized for this model.
 
 ```{r echo = FALSE, message= FALSE, warning= FALSE}
 
@@ -312,27 +311,49 @@ gt_xg_stats <- xg_reg_stats %>%
   )
 
 
+
+
+graph_xg <- xg_out %>% 
+  ggplot(aes(x = .pred, y = `Current Size`)) + geom_point()+
+  labs(
+    title = "Predicted vs Actual",
+    subtitle = "XGBoost Model"
+  )+ 
+  ggplot2::theme_minimal() +
+  ggplot2::theme(
+    legend.position = "bottom",
+    plot.title = element_text(face = "bold"),
+    legend.text = element_text(size = 10),
+    panel.border = element_rect(color = "black", fill = NA, linewidth =.05),
+    panel.background = element_rect(fill = "white", color = NA)
+  )
+
+#graph_xg
+
+#gt_xg_stats
 #gt_xg_stats  
 ```
 
-As shown above, relative humidity is the most important feature. This is to be expected as dry material is more easily flammable and spreads faster. Both location and wind speed are important factors as well, location will get explored later in the map section and wind speed affects wildfires in multiple ways; adding oxygen to fires and it also creates wind desiccation which causes moisture to be sucked out of plants- creating a very negative fire environment (RHS, 2026)! C2 Fuel type is characterized as boreal spruce, or evergreen forests, as evergreen forests are prone to desiccation and produce a very flammable resin. The final point of interest is month 5, may- this is widely reported to be one of the most prominent fire activity months as temperature begins to rise and snow melts. Knowing these factors gives additional insight into how to spot the warning signs for a potential fire.
+As shown above, relative humidity is the most important feature. This is to be expected as dry material is more flammable and spreads faster. Both location and wind speed are important factors as well, location will get explored later in the map section and wind speed affects wildfires in multiple ways; adding oxygen to fires and it also creates wind desiccation which causes moisture to be sucked out of plants- creating a very negative fire environment (RHS, 2026)! C2 Fuel type is characterized as boreal spruce, or evergreen forests, as evergreen forests are prone to desiccation and produce a very flammable resin. The final point of interest is month 5, may- this is widely reported to be one of the most prominent fire activity months as temperature begins to rise and snow melts. Knowing these factors gives additional insight into how to spot the warning signs for a potential fire.
 
-This model is a modest improvement from the original linear regression, with an R^2 value 5% higher, and lower error.
+This model is a modest improvement from the original linear regression, with an R\^2 value 5% higher, and lower error.
 
 ```{r echo=FALSE}
 gt_xg_stats
 ```
 
+There still remains significant error in this model, the predicted vs. actual for the XGBoost is noticeably stronger than the linear model shown in Figure 2
+```{r echo = FALSE}
 
-Knowing these factors gives additional insight into how to spot the warning signs for a potential fire.
-
+graph_xg
+```
 
 
 
 # Machine Learning Model 3 - Decision Tree
 
+The final model in this report is a decision tree, this "branches" off of the previous model and utilize; cause(natural or human-caused), temperature, humidity, wind speed and fuel type.
 
-The final model in this report is a decision tree, this "branches" off of the previous model and utilize the factors below. 
 ```{r echo = FALSE, message= FALSE, warning= FALSE}
 
 recipe_pipeline <- 
@@ -358,12 +379,10 @@ res <- model_cart %>%
   predict(new_data = tree_test_baked) %>% 
   bind_cols(tree_test_baked %>% dplyr::select(`Current Size`)) %>% yardstick::metrics(truth = `Current Size`, estimate = .pred) %>% 
   dplyr::arrange(.metric)
-#res
+
 
 
 ```
-
-
 
 The reasoning for using these indicators is to create a model which can be used regardless of the time of year, and provides general insights for non-seasonal trends, as well as creates an easy to read visualization. The tree diagram is illustrated below.
 
@@ -396,7 +415,7 @@ economic_data <- system("node scraper.js", intern = TRUE) %>%
 
 ```{r include = FALSE, echo = FALSE, message= FALSE, warning= FALSE}
 
-
+#cleaning data from dynamic web scraping
 
 top_income <- economic_data$indicators$`median-family-income`$top
 bot_income <- economic_data$indicators$`median-family-income`$bottom
@@ -521,11 +540,11 @@ comb_stats <- do.call("rbind", list(top_income_stats,bot_income_stats,top_fn_sta
 
 While there are large gaps in the model such as nearly 80% of variance being unexplained, these three models combined may prove useful as a basis for flagging dangerous conditions. To summarize, there are three red flag factors to pay attention to; Coniferous fuels, high winds, and low moisture. Areas that have these conditions should be on high alert, and ready to respond to any wildfires.
 
-***
+------------------------------------------------------------------------
 
 # Does wildfire response have a bias?
 
-It is an unfortunate reality that some groups of people are treated worse by the governing organization, as the impact of wildfires can be life altering- potential biases and inconsistencies should be noted and adjusted. The table below showcases what appears to be bias.
+It is an unfortunate reality that some groups of people are treated worse by the governing organization, as the impact of wildfires can be life altering- potential biases and inconsistencies should be noted and adjusted. Shown below is a table that could be interpreted as bias.
 
 ```{r echo = FALSE}
 
@@ -623,12 +642,14 @@ ggplot2::ggplot(ggplot2::aes(x = closest, y = log(`Current Size`),
 
 #fn_size_graph
 ```
-***
+
+------------------------------------------------------------------------
+
 ```{r echo=FALSE}
 fn_size_graph
 ```
 
-***
+------------------------------------------------------------------------
 
 # Interactive Map
 
@@ -720,53 +741,68 @@ m
 
 ```
 
-As shown above, there is a large variation in where high/low income municipalities are situated, and non first nations municipalities are situated in areas where no wildfires occur due to geography, in fact they are located within an area called "Non Forest Protection Area"- as such there are no wildfires. 
+As shown above, there is a large variation in where high/low income municipalities are situated, and non first nations municipalities are situated in areas where no wildfires occur due to geography, in fact they are located within an area called "Non Forest Protection Area"- as such there are no wildfires.
 
 Areas with a high First Nations population are reserves, typically found in northern/rural Alberta. Unfortunately, due to the isolation aspect many of these areas have slow fire response times. This does present an opportunity for both the province and the First Nations. 
 
-***
+------------------------------------------------------------------------
 
 # Recommendation 1
 
-Employment opportunities are scarce on reserves according to indigenous Services and Statistics Canada, with an employment rate of 47% compared to the national average of 74%. One way to combat this is through employment opportunities within Wildfire firefighting and support. Currently the province employs firefighters through the "Firetack" program however historically this program has been more like exploitation than employment. The province contracts eight person crews that function similarly to wage wild land firefighters, no official pay grid is available to the public.
+Employment opportunities are scarce on reserves according to indigenous Services and Statistics Canada, with an employment rate of 47% compared to the national average of 74%. One way to combat this is through employment opportunities within Wildfire firefighting and support. Currently the province employs First Nations firefighters through the "Firetack" program however historically this program has been more like exploitation than employment. The province contracts eight person crews that function similarly to wage wild land firefighters, no official pay grid is available to the public as individual areas have their own standing contracts.
 
-In the most recent Alberta Wildfire Payment Directive pay is listed for emergency non-contract hiring. Some notable figures are the Firetack Leader and member which are listed at $22.08 and $20.97 per hour respectfully. As of April 1st 2026, the lowest a wage wildland firefighter member can make is $23.80 an hour.
+In the most recent Alberta Wildfire Payment Directive pay is listed for emergency non-contract hiring. Some notable figures are the Firetack Leader and member which are listed at \$22.08 and \$20.97 per hour respectfully. As of April 1st 2026, the lowest a wage wildland firefighter member can make is \$23.80 an hour. As no contracts are public, and emergency non-contract hiring does occur, it can be used as a proxy for contract payment.
 
-As the province is facing extreme turnover for seasonal positions, it should look towards a more sustainable employment program with First Nations- a compromise that would benefit both parties. 
+As the province is facing extreme turnover for seasonal positions with some sources saying up to 50% per year; it should look towards a more sustainable employment program with First Nations- a compromise that would benefit both parties.
 
-***
+------------------------------------------------------------------------
 
 # Recommendation 2
 
-There should be a greater emphasis on preventive measures to ensure rural fires don't remain undetected. With advancements in drone and infrared technology, tower observers could be trained and equipped with drones that could help survey the land and detect any hot-spots or early start fires. Large scale wildfires can cost millions of dollars a day, whereas state of the art drones may cost a fraction of that, between $10-20,000. 
+There should be a greater emphasis on preventive measures to ensure rural fires don't remain undetected. With advancements in drone and infrared technology, tower observers could be trained and equipped with drones that could help survey the land and detect any hot-spots or early start fires. Large scale wildfires can cost millions of dollars a day, whereas state of the art drones may cost a fraction of that, between \$10-20,000.
+
+------------------------------------------------------------------------
+
+# Conclusion
+
+Wildfires will continue to be a part of every Albertan's life as they are a natural occurrence and can't completely be prevented. What can be changed is how prepared and proactive the province is, doing so can; prevent damages, create employment opportunities and invest in future technology. To protect against wildfires remember; coniferous + wind + dry weather = chance for catastrophic fire.
+
+
+
 
 
 ***
 
-# Conclusion
-
-Wildfires will continue to be a part of every Albertan's life as they are a natural occurrence and can't completely be prevented. What can be changed is how prepared and proactive the province is, doing so can; prevent damages, create employment opportunities and invest in future technology.
 
 
-# Appendix 
-
-Figure [1] - Machine Learning Model 1 Predictors
 
 
-```{r echo=FALSE}
+# Appendix
+
+Figure \[1\] - Machine Learning Model 1 - Predictors
+
+```{r echo=FALSE, warning = FALSE}
 pred_chart
 ```
 
+Figure [2] - Machine Learning Model 1 - Predicted vs. Actual 
+
+```{r echo=FALSE, warning= FALSE}
+lin_graph
+```
+
+# Citations
+
+Abatzoglou, J. T., Kolden, C. A., Cullen, A. C., Sadegh, M., Williams, E. L., Turco, M., & Jones, M. W. (2025). Climate change has increased the odds of extreme regional forest fire years globally. Nature Communications, 16(1), 6390. https://doi.org/10.1038/s41467-025-61608-1
+
+Canada, N. R. (2025, January 3). A glimpse into the future of the boreal forest: less frequent but more aggressive fires. Natural Resources Canada. https://natural-resources.canada.ca/stories/simply-science/glimpse-future-boreal-forest-less-frequent-more-aggressive-fires
+
+Government of Alberta, & Anderson, J. (2017). Alberta Wildfire payment directive. https://open.alberta.ca/dataset/e325baaf-e19a-4b31-a6c4-ee3e1b212472/resource/ac17ebca-a99f-410b-9508-0a65012033cf/download/fp-alberta-wildfire-payment-directive-2026-03.pdf
+
+Government of Canada; Indigenous Services Canada. (2023, October 25). An update on the socio-economic gaps between Indigenous Peoples and the non-Indigenous population in Canada: Highlights from the 2021 Census. https://www.sac-isc.gc.ca/eng/1690909773300/1690909797208#chp3-3
+
+Government of Canada, Statistics Canada. (2024, April 30). Quality of employment among First Nations people living off reserve and Métis, 2022. https://www150.statcan.gc.ca/n1/pub/41-20-0002/412000022024002-eng.htm
+
+Royal Horticultural Society. (2026, March 12). Wind scorch | RHS Advice. https://www.rhs.org.uk/prevention-protection/wind-scorch
 
 
-
-
-# Citations 
-
-
-https://www.rhs.org.uk/prevention-protection/wind-scorch
-https://www.sac-isc.gc.ca/eng/1690909773300/1690909797208#chp3-3
-https://www150.statcan.gc.ca/n1/pub/41-20-0002/412000022024002-eng.htm
-https://open.alberta.ca/dataset/e325baaf-e19a-4b31-a6c4-ee3e1b212472/resource/ac17ebca-a99f-410b-9508-0a65012033cf/download/fp-alberta-wildfire-payment-directive-2026-03.pdf
-https://pmc.ncbi.nlm.nih.gov/articles/PMC12246202/
-https://natural-resources.canada.ca/stories/simply-science/glimpse-future-boreal-forest-less-frequent-more-aggressive-fires
